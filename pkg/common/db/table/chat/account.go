@@ -21,6 +21,8 @@ import (
 
 type Account struct {
 	UserID         string    `bson:"user_id"`
+	WXOpenID       string    `bson:"open_id"`
+	ALIPAYOpenid   string    `bson:"alipay_openid"`
 	Password       string    `bson:"password"`
 	CreateTime     time.Time `bson:"create_time"`
 	ChangeTime     time.Time `bson:"change_time"`

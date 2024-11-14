@@ -52,6 +52,12 @@ func NewAttribute(db *mongo.Database) (chat.AttributeInterface, error) {
 				{Key: "phone_number", Value: 1},
 			},
 		},
+		{
+			Keys: bson.D{
+				{Key: "open_id", Value: 1},
+				{Key: "alipay_openid", Value: 1},
+			},
+		},
 	})
 	if err != nil {
 		return nil, errs.Wrap(err)
