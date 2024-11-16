@@ -36,22 +36,22 @@ func NewAttribute(db *mongo.Database) (chat.AttributeInterface, error) {
 			},
 			Options: options.Index().SetUnique(true),
 		},
-		{
-			Keys: bson.D{
-				{Key: "account", Value: 1},
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "email", Value: 1},
-			},
-		},
-		{
-			Keys: bson.D{
-				{Key: "area_code", Value: 1},
-				{Key: "phone_number", Value: 1},
-			},
-		},
+		//{
+		//	Keys: bson.D{
+		//		{Key: "account", Value: 1},
+		//	},
+		//},
+		//{
+		//	Keys: bson.D{
+		//		{Key: "email", Value: 1},
+		//	},
+		//},
+		//{
+		//	Keys: bson.D{
+		//		{Key: "area_code", Value: 1},
+		//		{Key: "phone_number", Value: 1},
+		//	},
+		//},
 		{
 			Keys: bson.D{
 				{Key: "open_id", Value: 1},
