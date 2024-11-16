@@ -9,6 +9,9 @@ import (
 
 type Attribute struct {
 	UserID           string    `bson:"user_id"`
+	WXOpenID         string    `bson:"open_id"`       //微信用户id
+	ALIPAYOpenid     string    `bson:"alipay_openid"` //支付宝用户id
+	UserType         string    `bson:"user_type"`     //用户类别 1:个人,10,个人推荐人一级,11,个人推荐人二级,20,商家推荐人1级,21,商家推荐人二级,30,商户,40,股东县区,41,股东....,50,平台
 	Account          string    `bson:"account"`
 	PhoneNumber      string    `bson:"phone_number"`
 	AreaCode         string    `bson:"area_code"`

@@ -19,6 +19,7 @@ import (
 	"time"
 )
 
+// 用户系统//允许手机号,密码重复,类型不一直
 type Account struct {
 	UserID         string    `bson:"user_id"`
 	Password       string    `bson:"password"`
