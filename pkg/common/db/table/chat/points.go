@@ -25,5 +25,5 @@ func (PointsRefreshRecord) TableName() string {
 // 只有创建与查询,不提供更新修改与删除
 type PointsRefreshRecordInterface interface {
 	Create(ctx context.Context, record ...*PointsRefreshRecord) error
-	Take(ctx context.Context, userID string, pagination pagination.Pagination) (int64, *PointsRefreshRecord, error)
+	Take(ctx context.Context, userID string, pagination pagination.Pagination) (int64, []*PointsRefreshRecord, error)
 }

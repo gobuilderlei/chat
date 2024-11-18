@@ -3,6 +3,7 @@ package chat
 import (
 	"context"
 	shopdb "github.com/openimsdk/chat/pkg/common/db/table/chat"
+	"github.com/openimsdk/tools/db/mongoutil"
 	"github.com/openimsdk/tools/db/pagination"
 	"github.com/openimsdk/tools/errs"
 	"go.mongodb.org/mongo-driver/bson"
@@ -27,8 +28,8 @@ type PointsRe struct {
 }
 
 func (p *PointsRe) Create(ctx context.Context, record ...*shopdb.PointsRefreshRecord) error {
-	return nil
+	return mongoutil.InsertMany[*shopdb.PointsRefreshRecord](ctx, p.coll, record)
 }
-func (p *PointsRe) Take(ctx context.Context, userID string, pagination pagination.Pagination) (int64, *shopdb.PointsRefreshRecord, error) {
-	return 0, nil, nil
+func (p *PointsRe) Take(ctx context.Context, userID string, pagination pagination.Pagination) (int64, []*shopdb.PointsRefreshRecord, error) {
+	return mongoutil.FindPage[*shopdb.PointsRefreshRecord](ctx, p.coll, userID, pagination)
 }

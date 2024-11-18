@@ -3,6 +3,7 @@ package chat
 import (
 	"context"
 	shopdb "github.com/openimsdk/chat/pkg/common/db/table/chat"
+	"github.com/openimsdk/tools/db/mongoutil"
 	"github.com/openimsdk/tools/errs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,12 +29,12 @@ type Wallet struct {
 	coll *mongo.Collection
 }
 
-func (w *Wallet) Create(ctx context.Context, wallet *shopdb.Wallet) error {
-	return nil
+func (w *Wallet) Create(ctx context.Context, wallet ...*shopdb.Wallet) error {
+	return mongoutil.InsertMany[*shopdb.Wallet](ctx, w.coll, wallet)
 }
-func (w *Wallet) Update(ctx context.Context, userId string, data map[string]any) (bool, error) {
-	return false, nil
+func (w *Wallet) Update(ctx context.Context, userId string, data map[string]any) error {
+	return mongoutil.UpdateOne(ctx, w.coll, bson.M{"user_id": userId}, bson.M{"$set": data}, false)
 }
 func (w *Wallet) GetByUserID(ctx context.Context, userId string) (*shopdb.Wallet, error) {
-	return nil, nil
+	return mongoutil.FindOne[*shopdb.Wallet](ctx, w.coll, bson.M{"user_id": userId})
 }

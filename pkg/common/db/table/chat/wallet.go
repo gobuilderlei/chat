@@ -16,7 +16,7 @@ func (Wallet) TableName() string {
 }
 
 type WalletInterface interface {
-	Create(ctx context.Context, wallet *Wallet) error
-	Update(ctx context.Context, userId string, data map[string]any) (bool, error)
+	Create(ctx context.Context, wallet ...*Wallet) error
+	Update(ctx context.Context, userId string, data map[string]any) error
 	GetByUserID(ctx context.Context, userId string) (*Wallet, error)
 }

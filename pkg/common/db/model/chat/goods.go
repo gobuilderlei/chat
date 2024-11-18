@@ -31,7 +31,7 @@ func (p *ShopProductAbttri) GetProduct(ctx context.Context, uuid string) (*shopd
 	if uuid == "" {
 		return nil, nil
 	}
-	return mongoutil.FindOne[*shopdb.ProductAbttri](ctx, p.coll, bson.M{"uuid": uuid}, nil)
+	return mongoutil.FindOne[*shopdb.ProductAbttri](ctx, p.coll, bson.M{"uuid": uuid, "_id": -1}, nil)
 }
 func (p *ShopProductAbttri) GetProducts(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*shopdb.ProductAbttri, error) {
 	filter := bson.M{"uuid": uuid}
@@ -39,7 +39,7 @@ func (p *ShopProductAbttri) GetProducts(ctx context.Context, uuid string, pagina
 }
 
 func (p *ShopProductAbttri) GetProductForuuid(ctx context.Context, uuid string) (*shopdb.ProductAbttri, error) {
-	return mongoutil.FindOne[*shopdb.ProductAbttri](ctx, p.coll, bson.M{"uuid": uuid}, nil)
+	return mongoutil.FindOne[*shopdb.ProductAbttri](ctx, p.coll, bson.M{"uuid": uuid, "_id": -1}, nil)
 }
 func (p *ShopProductAbttri) GetProductsForuuid(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*shopdb.ProductAbttri, error) {
 	return mongoutil.FindPage[*shopdb.ProductAbttri](ctx, p.coll, bson.M{"uuid": uuid}, pagination, nil)

@@ -1,6 +1,9 @@
 package chat
 
-import "context"
+import (
+	"context"
+	"github.com/openimsdk/tools/db/pagination"
+)
 
 //交易系统
 //订单系统
@@ -16,7 +19,7 @@ type ShopOrder struct {
 	//支付类型
 	PayType string `json:"payType" bson:"pay_type"` //支付类型
 	//订单状态
-	Status int `json:"status"` //订单状态 0为==待支付 1为==待发货 2为==待收货 3为==已完成 4为==已取消 5为==退款中 6为==退款完成
+	Status int `json:"status" bson:"status"` //订单状态 0为==待支付 1为==待发货 2为==待收货 3为==已完成 4为==已取消 5为==退款中 6为==退款完成
 	//订单金额
 	Amount float32 `json:"amount" bson:"amount"` //订单金额
 	//支付金额情况
@@ -42,11 +45,11 @@ func (ShopOrder) TableName() string {
 }
 
 type ShopOrderInterface interface {
-	Create(ctx context.Context, order *ShopOrder) error
+	Create(ctx context.Context, order ...*ShopOrder) error
 	GetByUUId(ctx context.Context, UUId string) (*ShopOrder, error)
-	GetByUserId(ctx context.Context, userId string) ([]*ShopOrder, error)
-	GetByMerchantId(ctx context.Context, merchantId string) ([]*ShopOrder, error)
-	GetByStatus(ctx context.Context, ordertype, status int) ([]*ShopOrder, error)
-	GetByGoodsId(ctx context.Context, goodsId string) ([]*ShopOrder, error)
-	GetByAmount(ctx context.Context, minAmount, maxAmount float64) ([]*ShopOrder, error)
+	GetByUserId(ctx context.Context, userId string, pagination pagination.Pagination) (int64, []*ShopOrder, error)
+	GetByMerchantId(ctx context.Context, merchantId string, pagination pagination.Pagination) (int64, []*ShopOrder, error)
+	GetByStatus(ctx context.Context, ordertype, status int, pagination pagination.Pagination) (int64, []*ShopOrder, error)
+	GetByGoodsId(ctx context.Context, goodsId string, pagination pagination.Pagination) (int64, []*ShopOrder, error)
+	GetByAmount(ctx context.Context, minAmount, maxAmount float32, pagination pagination.Pagination) (int64, []*ShopOrder, error)
 }

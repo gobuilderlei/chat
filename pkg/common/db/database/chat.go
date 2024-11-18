@@ -16,6 +16,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/openimsdk/tools/db/mongoutil"
@@ -58,7 +59,6 @@ type ChatDatabaseInterface interface {
 	DelUserAccount(ctx context.Context, userIDs []string) error
 
 	//商品部分
-	GetProduct(ctx context.Context, uuid string) (product *chatdb.ProductAbttri, err error)
 	GetProducts(ctx context.Context, userid string, pagination pagination.Pagination) (aa int64, products []*chatdb.ProductAbttri, err error)
 	GetProductForuuid(ctx context.Context, uuid string) (*chatdb.ProductAbttri, error)
 	GetProductsForuuid(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*chatdb.ProductAbttri, error)
@@ -70,12 +70,11 @@ type ChatDatabaseInterface interface {
 	CreateOrder(ctx context.Context, userid string, order ...*chatdb.ShopOrder) error
 	GetOrders(ctx context.Context, Userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	GetOrderForuuid(ctx context.Context, uuid string) (*chatdb.ShopOrder, error)
-	GetOrderForUserid(ctx context.Context, userid string) (*[]chatdb.ShopOrder, error)
-	GetOrderForMerchantId(ctx context.Context, merchantid string) (*[]chatdb.ShopOrder, error)
-	GetOrderForStatus(ctx context.Context, ordertype, status int) (*[]chatdb.ShopOrder, error)
-	GetOrderForGoodsId(ctx context.Context, goodsId string) (*[]chatdb.ShopOrder, error)
-	GetOrderForAmount(ctx context.Context, minAmount, maxAmount float64) (*[]chatdb.ShopOrder, error)
-
+	GetOrderForUserid(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
+	GetOrderForMerchantId(ctx context.Context, merchantid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
+	GetOrderForStatus(ctx context.Context, ordertype, status int, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
+	GetOrderForGoodsId(ctx context.Context, goodsId string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
+	GetOrderForAmount(ctx context.Context, minAmount, maxAmount float32, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	//积分操作部分
 	CreatePointsRefreshRecord(ctx context.Context, record ...*chatdb.PointsRefreshRecord) error
 	GetPointsRefreshRecord(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.PointsRefreshRecord, error)
@@ -351,30 +350,30 @@ func (o *ChatDatabase) DelUserAccount(ctx context.Context, userIDs []string) err
 }
 
 // 商品部分
-func (o *ChatDatabase) GetProduct(ctx context.Context, uuid string) (product *chatdb.ProductAbttri, err error) {
-	return nil, nil
-}
 func (o *ChatDatabase) GetProducts(ctx context.Context, userid string, pagination pagination.Pagination) (aa int64, products []*chatdb.ProductAbttri, err error) {
-	return 0, nil, nil
+	return o.goods.GetProducts(ctx, userid, pagination)
 }
 func (o *ChatDatabase) GetProductForuuid(ctx context.Context, uuid string) (*chatdb.ProductAbttri, error) {
-	return nil, nil
+	return o.goods.GetProduct(ctx, uuid)
 }
 func (o *ChatDatabase) GetProductsForuuid(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*chatdb.ProductAbttri, error) {
-	return 0, nil, nil
+	return o.goods.GetProductsForuuid(ctx, uuid, pagination)
 }
 func (o *ChatDatabase) CreateProduct(ctx context.Context, product ...*chatdb.ProductAbttri) error {
-	return nil
+	return o.goods.CreateProduct(ctx, product...)
 }
 func (o *ChatDatabase) UpdateProduct(ctx context.Context, uuid string, data map[string]any) error {
-	return nil
+	return o.goods.UpdateProduct(ctx, uuid, data)
 }
 
 //购物车部分
 
 // 订单部分
 func (o *ChatDatabase) CreateOrder(ctx context.Context, userid string, order ...*chatdb.ShopOrder) error {
-	return nil
+	if len(order) == 0 {
+		return errors.New("order is nil")
+	}
+	return o.order.Create(ctx, order...)
 }
 func (o *ChatDatabase) GetOrders(ctx context.Context, Userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
 	return 0, nil, nil
@@ -382,37 +381,40 @@ func (o *ChatDatabase) GetOrders(ctx context.Context, Userid string, pagination 
 func (o *ChatDatabase) GetOrderForuuid(ctx context.Context, uuid string) (*chatdb.ShopOrder, error) {
 	return nil, nil
 }
-func (o *ChatDatabase) GetOrderForUserid(ctx context.Context, userid string) (*[]chatdb.ShopOrder, error) {
-	return nil, nil
+func (o *ChatDatabase) GetOrderForUserid(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
+	return o.order.GetByUserId(ctx, userid, pagination)
 }
-func (o *ChatDatabase) GetOrderForMerchantId(ctx context.Context, merchantid string) (*[]chatdb.ShopOrder, error) {
-	return nil, nil
+func (o *ChatDatabase) GetOrderForMerchantId(ctx context.Context, merchantid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
+	return o.order.GetByMerchantId(ctx, merchantid, pagination)
 }
-func (o *ChatDatabase) GetOrderForStatus(ctx context.Context, ordertype, status int) (*[]chatdb.ShopOrder, error) {
-	return nil, nil
+func (o *ChatDatabase) GetOrderForStatus(ctx context.Context, ordertype, status int, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
+	return o.order.GetByStatus(ctx, ordertype, status, pagination)
 }
-func (o *ChatDatabase) GetOrderForGoodsId(ctx context.Context, goodsId string) (*[]chatdb.ShopOrder, error) {
-	return nil, nil
+func (o *ChatDatabase) GetOrderForGoodsId(ctx context.Context, goodsId string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
+	return o.order.GetByGoodsId(ctx, goodsId, pagination)
 }
-func (o *ChatDatabase) GetOrderForAmount(ctx context.Context, minAmount, maxAmount float64) (*[]chatdb.ShopOrder, error) {
-	return nil, nil
+func (o *ChatDatabase) GetOrderForAmount(ctx context.Context, minAmount, maxAmount float32, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
+	return o.order.GetByAmount(ctx, minAmount, maxAmount, pagination)
 }
 
 // 积分操作部分
 func (o *ChatDatabase) CreatePointsRefreshRecord(ctx context.Context, record ...*chatdb.PointsRefreshRecord) error {
-	return nil
+	return o.points.Create(ctx, record...)
 }
 func (o *ChatDatabase) GetPointsRefreshRecord(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.PointsRefreshRecord, error) {
-	return 0, nil, nil
+	return o.points.Take(ctx, userid, pagination)
 }
 
 // 钱包部分
 func (o *ChatDatabase) CreateWallet(ctx context.Context, wallet ...*chatdb.Wallet) error {
-	return nil
+	return o.wallet.Create(ctx, wallet...)
 }
 func (o *ChatDatabase) GetWalletByUserID(ctx context.Context, userid string) (*chatdb.Wallet, error) {
-	return nil, nil
+	return o.wallet.GetByUserID(ctx, userid)
 }
 func (o *ChatDatabase) UpdateWallet(ctx context.Context, userId string, data map[string]any) (bool, error) {
-	return false, nil
+	if o.wallet.Update(ctx, userId, data) != error(nil) {
+		return false, error(nil)
+	}
+	return true, o.wallet.Update(ctx, userId, data)
 }
