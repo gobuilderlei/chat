@@ -10,14 +10,12 @@ import (
 
 type ShopOrder struct {
 	UUId   string `json:"uuid" bson:"uuid"`      //订单编号
-	userId string `json:"userId" bson:"user_id"` //用户编号
+	UserId string `json:"userId" bson:"user_id"` //用户编号
 	//订单类型
 	OrderType int    `json:"orderType" bson:"order_type"` //订单类型 0为线下订单,线下订单不提供退款服务,可以无商品编号,状态直接为已完成,1为线上订单
-	goodsId   string `json:"goodsId" bson:"goods_id"`     //商品编号
+	GoodsId   string `json:"goodsId" bson:"goods_id"`     //商品编号
 	//商家编号
 	MerchantId string `json:"merchantId" bson:"merchant_id"` //商家编号
-	//支付类型
-	PayType string `json:"payType" bson:"pay_type"` //支付类型
 	//订单状态
 	Status int `json:"status" bson:"status"` //订单状态 0为==待支付 1为==待发货 2为==待收货 3为==已完成 4为==已取消 5为==退款中 6为==退款完成
 	//订单金额
@@ -45,9 +43,10 @@ func (ShopOrder) TableName() string {
 }
 
 type ShopOrderInterface interface {
-	Create(ctx context.Context, order ...*ShopOrder) error
+	Create(ctx context.Context, userId string, order ...*ShopOrder) error
 	GetByUUId(ctx context.Context, UUId string) (*ShopOrder, error)
 	GetByUserId(ctx context.Context, userId string, pagination pagination.Pagination) (int64, []*ShopOrder, error)
+	GetByUserIdForLast(ctx context.Context, userId string) (*ShopOrder, error)
 	GetByMerchantId(ctx context.Context, merchantId string, pagination pagination.Pagination) (int64, []*ShopOrder, error)
 	GetByStatus(ctx context.Context, ordertype, status int, pagination pagination.Pagination) (int64, []*ShopOrder, error)
 	GetByGoodsId(ctx context.Context, goodsId string, pagination pagination.Pagination) (int64, []*ShopOrder, error)

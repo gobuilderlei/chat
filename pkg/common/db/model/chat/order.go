@@ -29,7 +29,7 @@ type Shop_Order struct {
 	coll *mongo.Collection
 }
 
-func (s *Shop_Order) Create(ctx context.Context, order ...*shopoder.ShopOrder) error {
+func (s *Shop_Order) Create(ctx context.Context, userId string, order ...*shopoder.ShopOrder) error {
 	return mongoutil.InsertMany[*shopoder.ShopOrder](ctx, s.coll, order)
 }
 func (s *Shop_Order) GetByUUId(ctx context.Context, UUId string) (*shopoder.ShopOrder, error) {
@@ -37,6 +37,10 @@ func (s *Shop_Order) GetByUUId(ctx context.Context, UUId string) (*shopoder.Shop
 }
 func (s *Shop_Order) GetByUserId(ctx context.Context, userId string, pagination pagination.Pagination) (int64, []*shopoder.ShopOrder, error) {
 	return mongoutil.FindPage[*shopoder.ShopOrder](ctx, s.coll, bson.M{"user_id": userId}, pagination)
+}
+func (s *Shop_Order) GetByUserIdForLast(ctx context.Context, userId string) (*shopoder.ShopOrder, error) {
+	option := options.FindOne().SetSort(bson.D{{"_id", -1}})
+	return mongoutil.FindOne[*shopoder.ShopOrder](ctx, s.coll, bson.M{"user_id": userId}, option)
 }
 func (s *Shop_Order) GetByMerchantId(ctx context.Context, merchantId string, pagination pagination.Pagination) (int64, []*shopoder.ShopOrder, error) {
 	return mongoutil.FindPage[*shopoder.ShopOrder](ctx, s.coll, bson.M{"merchant_id": merchantId}, pagination)

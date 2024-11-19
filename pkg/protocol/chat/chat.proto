@@ -15,9 +15,9 @@
 syntax = "proto3";
 package openim.chat;
 
-import "common/common.proto";
-import "sdkws/sdkws.proto";
-import "wrapperspb/wrapperspb.proto";
+import "pkg/protocol/common/common.proto";
+import "pkg/protocol/sdkws/sdkws.proto";
+import "pkg/protocol/wrapperspb/wrapperspb.proto";
 
 option go_package = "github.com/openimsdk/chat/pkg/protocol/chat";
 
@@ -288,6 +288,131 @@ message GetAllowRegisterResp {
   bool allowRegister = 1;
 }
 
+message ChatIsOk{
+  bool isOk = 1;
+}
+
+message ProductInfo{
+  string UUid = 1;
+  int32 BrandId = 2;
+  int32 ProductCategoryId = 3;
+  int32 FreightTemplateId = 4;
+  int32 ProductAttributeId = 5;
+  string Name = 6;
+  string Pic = 7;
+  string ProductSn = 8;
+  int32 DeleteStatus = 9;
+  int32 PublishStatus = 10;
+  int32 NewStatus = 11;
+  int32 RecommandStatus = 12;
+  int32 VerifyStatus = 13;
+  int32 Sort = 14;
+  int32 Sale = 15;
+  double Price = 16;
+  int32 GiftGrowth = 17;
+  int32 GiftPoint = 18;
+  int32 UsePointLimit = 19;
+  string SubTitle = 20;
+  double OriginalPrice = 21;
+  int32 Stock = 22;
+  int32 LowStock = 23;
+  string Unit = 24;
+  double Weight = 25;
+  int32 PreviewStatus = 26;
+  string ServiceIds = 27;
+  string Keywords = 28;
+  string Note = 29;
+  string AlbumPics = 30;
+  string DetailTitle = 31;
+  string DetailDesc = 32;
+  string DetailHtml = 33;
+  string PromotionStartTime = 34;
+  string PromotionEndTime = 35;
+  int32 PromotionPerLimit = 36;
+  int32 PromotionType = 37;
+  string BrandName = 38;
+  string ProductCategoryName = 39;
+  string Description = 40;
+}
+
+message ShopOrder{
+    string UUId  =1;
+    string UserId=2;
+    int32 OrderType=3;
+    string GoodsId = 4;
+    string MerchantId =5;
+    int32 Status = 6;
+    double Amount = 7;
+    PayAmount PayAmount= 8;
+    int64 CreateTime = 9;
+    int64 PayTime = 10;
+    int64 FinishTime = 11;
+    string Encryption = 12;//加密数据
+}
+
+message PayAmount{
+  double AlipayAmount    =1;    //支付宝支付金额
+  double WechatAmount   =2;   //微信支付金额
+  double UnionpayAmount =3; //银行卡支付金额
+  double VoucherAmount =4;
+}
+
+//积分自动刷新系统
+message PointAutoRefresh{
+  string UserId = 1;
+  int64 TotalPoints = 2;
+  int32 Operator=3;
+  int64 RefreshTime = 4;
+  double Points = 5;
+  double RefreshVoucher = 6;
+  string Note=7;
+  string Encryption = 8;//加密数据
+ }
+
+ //钱包
+ message Wallet{
+   string UserId = 1;
+   double PointsKeeping = 2;
+   double Voucher=3;
+ }
+
+ message UserIDOrUUIdAndPagination{
+     string Useridoruuid = 1;
+     openim.sdkws.RequestPagination Pagination = 2;
+ }
+
+ message UserIDOrUUId{
+    string Useridoruuid = 1;
+ }
+
+ message ProductList{
+   repeated ProductInfo ProductList = 1;
+ }
+
+ message UpdateDataReq{
+   string Useridoruuid = 1;
+   map<string,string> data = 2;
+ }
+
+ message ShopOrderListRes{
+   repeated ShopOrder ShopOrderList = 1;
+ }
+
+ message ShopOrderStatus{
+     int32 orderType = 1;
+     int32 status = 2;
+     openim.sdkws.RequestPagination Pagination = 3;
+ }
+
+ message ShopOrderAmount{
+     double minamount = 1;
+     double maxamount = 2;
+     openim.sdkws.RequestPagination Pagination = 3;
+ }
+
+ message PointsAutoRefreshListRes{
+   repeated PointAutoRefresh PointAutoRefreshList = 1;
+}
 
 service chat {
   // Edit personal information - called by the user or an administrator
@@ -323,4 +448,25 @@ service chat {
 
   rpc SetAllowRegister(SetAllowRegisterReq) returns(SetAllowRegisterResp);
   rpc GetAllowRegister(GetAllowRegisterReq) returns(GetAllowRegisterResp);
+
+  //商品部分
+  rpc GetProducts(UserIDOrUUIdAndPagination) returns (ProductList);
+  rpc GetProductForUUID(UserIDOrUUId) returns(ProductInfo);
+  rpc CreateProduct(ProductInfo) returns(ChatIsOk);
+  rpc UpdateProduct(UpdateDataReq) returns(ChatIsOk);
+  //订单部分
+  rpc CreateShopOrder(ShopOrder) returns(ChatIsOk);
+  rpc GetShopOrderForUserUUid(UserIDOrUUId) returns(ShopOrder);
+  //可以是id也可以是uuid,也可以是merchantid或者是goodsid
+  rpc GetShopOrders(UserIDOrUUIdAndPagination) returns(ShopOrderListRes);
+  rpc GetShopOrderForStatus(ShopOrderStatus)returns (ShopOrderListRes);
+  rpc GetShopOrderForAmout(ShopOrderAmount) returns(ShopOrderListRes);
+  //积分自动刷新系统
+  rpc CreatePointAutoRefresh(PointAutoRefresh) returns(ChatIsOk);
+  rpc GetPointAutoRefresh(UserIDOrUUIdAndPagination) returns(PointsAutoRefreshListRes);
+
+  //钱包
+  rpc GetWallet(UserIDOrUUId) returns(Wallet);
+  rpc UpdateWallet(Wallet) returns(ChatIsOk);
+  rpc UpdateWallrt(UpdateDataReq) returns (ChatIsOk);
 }

@@ -61,7 +61,7 @@ type ChatDatabaseInterface interface {
 	//商品部分
 	GetProducts(ctx context.Context, userid string, pagination pagination.Pagination) (aa int64, products []*chatdb.ProductAbttri, err error)
 	GetProductForuuid(ctx context.Context, uuid string) (*chatdb.ProductAbttri, error)
-	GetProductsForuuid(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*chatdb.ProductAbttri, error)
+	//GetProductsForuseid(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*chatdb.ProductAbttri, error)
 	CreateProduct(ctx context.Context, product ...*chatdb.ProductAbttri) error
 	UpdateProduct(ctx context.Context, uuid string, data map[string]any) error
 	//购物车部分
@@ -71,6 +71,7 @@ type ChatDatabaseInterface interface {
 	GetOrders(ctx context.Context, Userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	GetOrderForuuid(ctx context.Context, uuid string) (*chatdb.ShopOrder, error)
 	GetOrderForUserid(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
+	GetByUserIdForLAST(ctx context.Context, userid string) (*chatdb.ShopOrder, error)
 	GetOrderForMerchantId(ctx context.Context, merchantid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	GetOrderForStatus(ctx context.Context, ordertype, status int, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	GetOrderForGoodsId(ctx context.Context, goodsId string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
@@ -356,9 +357,10 @@ func (o *ChatDatabase) GetProducts(ctx context.Context, userid string, paginatio
 func (o *ChatDatabase) GetProductForuuid(ctx context.Context, uuid string) (*chatdb.ProductAbttri, error) {
 	return o.goods.GetProduct(ctx, uuid)
 }
-func (o *ChatDatabase) GetProductsForuuid(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*chatdb.ProductAbttri, error) {
-	return o.goods.GetProductsForuuid(ctx, uuid, pagination)
-}
+
+//	func (o *ChatDatabase) GetProductsForuuid(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*chatdb.ProductAbttri, error) {
+//		return o.goods.GetProductsForuuid(ctx, uuid, pagination)
+//	}
 func (o *ChatDatabase) CreateProduct(ctx context.Context, product ...*chatdb.ProductAbttri) error {
 	return o.goods.CreateProduct(ctx, product...)
 }
@@ -373,7 +375,7 @@ func (o *ChatDatabase) CreateOrder(ctx context.Context, userid string, order ...
 	if len(order) == 0 {
 		return errors.New("order is nil")
 	}
-	return o.order.Create(ctx, order...)
+	return o.order.Create(ctx, userid, order...)
 }
 func (o *ChatDatabase) GetOrders(ctx context.Context, Userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
 	return 0, nil, nil
@@ -383,6 +385,9 @@ func (o *ChatDatabase) GetOrderForuuid(ctx context.Context, uuid string) (*chatd
 }
 func (o *ChatDatabase) GetOrderForUserid(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
 	return o.order.GetByUserId(ctx, userid, pagination)
+}
+func (o *ChatDatabase) GetByUserIdForLAST(ctx context.Context, userid string) (*chatdb.ShopOrder, error) {
+	return o.order.GetByUserIdForLast(ctx, userid)
 }
 func (o *ChatDatabase) GetOrderForMerchantId(ctx context.Context, merchantid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
 	return o.order.GetByMerchantId(ctx, merchantid, pagination)

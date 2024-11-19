@@ -7354,7 +7354,6 @@ func file_admin_admin_proto_init() {
 				return nil
 			}
 		}
-		file_admin_admin_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AdminUpdateInfoReq); i {
 			case 0:
 				return &v.state

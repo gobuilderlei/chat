@@ -7,8 +7,7 @@ import (
 
 // 每日系统积分刷新记录表
 type PointsRefreshRecord struct {
-	UserID string `bson:"user_id"`
-	//CreateTime  int64  `bson:"create_time"`  //时间戳
+	UserID         string  `bson:"user_id"`
 	TotalPoints    int64   `bson:"total_points"`             //总积分,不删除的
 	Operator       int     `json:"operator" bson:"operator"` //操作人  0:系统 1:用户
 	RefreshTime    int64   `bson:"refresh_time"`             //刷新时间戳
