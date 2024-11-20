@@ -365,6 +365,10 @@ func (o *chatSvr) GetShopOrderForAmout(ctx context.Context, req *chat.ShopOrderA
 // 积分自动刷新系统
 func (o *chatSvr) CreatePointAutoRefresh(ctx context.Context, req *chat.PointAutoRefresh) (res *chat.ChatIsOk, err error) {
 	var pointAutoRefresh *chatdb.PointsRefreshRecord
+	pointAutoRefresh, err0 := o.Database.GetPointsRefreshRecordForLast(ctx, req.UserId)
+	if err0 != nil {
+		fmt.Println("GetPointsRefreshRecordForLast err:", err0)
+	}
 	pointAutoRefresh.UserID = req.UserId
 	pointAutoRefresh.TotalPoints = req.TotalPoints
 	pointAutoRefresh.Operator = int(req.Operator)
@@ -372,7 +376,14 @@ func (o *chatSvr) CreatePointAutoRefresh(ctx context.Context, req *chat.PointAut
 	pointAutoRefresh.Points = float32(req.Points)
 	pointAutoRefresh.RefreshVoucher = float32(req.RefreshVoucher)
 	pointAutoRefresh.Note = req.Note
-	pointAutoRefresh.Encryption = req.Encryption
+	pointAutoRefresh.Encryption = HmacSha256ToHex("ZWL",
+		req.UserId+
+			fmt.Sprintf("%v", req.TotalPoints)+
+			fmt.Sprintf("%v", req.Operator)+
+			fmt.Sprintf("%f", req.Points)+
+			fmt.Sprintf("%f", req.RefreshVoucher)+
+			pointAutoRefresh.Encryption,
+	)
 	err1 := o.Database.CreatePointsRefreshRecord(ctx, pointAutoRefresh)
 	if err1 != nil {
 		fmt.Println("CreatePointAutoRefresh err:", err1)
@@ -380,6 +391,7 @@ func (o *chatSvr) CreatePointAutoRefresh(ctx context.Context, req *chat.PointAut
 	}
 	return &chat.ChatIsOk{IsOk: true}, nil
 }
+
 func (o *chatSvr) GetPointAutoRefresh(ctx context.Context, req *chat.UserIDOrUUIdAndPagination) (res *chat.PointsAutoRefreshListRes, err error) {
 	_, pointAutoRefreshList, err := o.Database.GetPointsRefreshRecord(ctx, req.Useridoruuid, req.GetPagination())
 	if err != nil {
@@ -417,10 +429,8 @@ func (o *chatSvr) GetWallet(ctx context.Context, req *chat.UserIDOrUUId) (res *c
 		Voucher:       float64(wallet.Voucher),
 	}, nil
 }
-func (o *chatSvr) UpdateWallet(ctx context.Context, req *chat.Wallet) (res *chat.ChatIsOk, err error) {
-	return nil, nil
-}
-func (o *chatSvr) UpdateWallrt(ctx context.Context, req *chat.UpdateDataReq) (res *chat.ChatIsOk, err error) {
+
+func (o *chatSvr) UpdateWallet(ctx context.Context, req *chat.UpdateDataReq) (res *chat.ChatIsOk, err error) {
 	value := ""
 	for _, v := range req.GetData() {
 		value = v

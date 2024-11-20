@@ -33,3 +33,8 @@ func (p *PointsRe) Create(ctx context.Context, record ...*shopdb.PointsRefreshRe
 func (p *PointsRe) Take(ctx context.Context, userID string, pagination pagination.Pagination) (int64, []*shopdb.PointsRefreshRecord, error) {
 	return mongoutil.FindPage[*shopdb.PointsRefreshRecord](ctx, p.coll, userID, pagination)
 }
+
+func (p *PointsRe) TakeLast(ctx context.Context, userID string) (*shopdb.PointsRefreshRecord, error) {
+	options := options.FindOne().SetSort(bson.D{{"id", -1}})
+	return mongoutil.FindOne[*shopdb.PointsRefreshRecord](ctx, p.coll, userID, options)
+}

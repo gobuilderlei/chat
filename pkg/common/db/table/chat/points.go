@@ -6,6 +6,7 @@ import (
 )
 
 // 每日系统积分刷新记录表
+// 全端自动根据当前订单情况后,将积分数据写入此表,每日系统将根据此表刷新用户的积分数据
 type PointsRefreshRecord struct {
 	UserID         string  `bson:"user_id"`
 	TotalPoints    int64   `bson:"total_points"`             //总积分,不删除的
@@ -25,4 +26,5 @@ func (PointsRefreshRecord) TableName() string {
 type PointsRefreshRecordInterface interface {
 	Create(ctx context.Context, record ...*PointsRefreshRecord) error
 	Take(ctx context.Context, userID string, pagination pagination.Pagination) (int64, []*PointsRefreshRecord, error)
+	TakeLast(ctx context.Context, userID string) (*PointsRefreshRecord, error)
 }

@@ -66,7 +66,7 @@ type ChatClient interface {
 	GetPointAutoRefresh(ctx context.Context, in *UserIDOrUUIdAndPagination, opts ...grpc.CallOption) (*PointsAutoRefreshListRes, error)
 	// 钱包
 	GetWallet(ctx context.Context, in *UserIDOrUUId, opts ...grpc.CallOption) (*Wallet, error)
-	UpdateWallet(ctx context.Context, in *Wallet, opts ...grpc.CallOption) (*ChatIsOk, error)
+	// rpc UpdateWallet(Wallet) returns(ChatIsOk);
 	UpdateWallrt(ctx context.Context, in *UpdateDataReq, opts ...grpc.CallOption) (*ChatIsOk, error)
 }
 
@@ -384,15 +384,6 @@ func (c *chatClient) GetWallet(ctx context.Context, in *UserIDOrUUId, opts ...gr
 	return out, nil
 }
 
-func (c *chatClient) UpdateWallet(ctx context.Context, in *Wallet, opts ...grpc.CallOption) (*ChatIsOk, error) {
-	out := new(ChatIsOk)
-	err := c.cc.Invoke(ctx, "/openim.chat.chat/UpdateWallet", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *chatClient) UpdateWallrt(ctx context.Context, in *UpdateDataReq, opts ...grpc.CallOption) (*ChatIsOk, error) {
 	out := new(ChatIsOk)
 	err := c.cc.Invoke(ctx, "/openim.chat.chat/UpdateWallrt", in, out, opts...)
@@ -450,7 +441,7 @@ type ChatServer interface {
 	GetPointAutoRefresh(context.Context, *UserIDOrUUIdAndPagination) (*PointsAutoRefreshListRes, error)
 	// 钱包
 	GetWallet(context.Context, *UserIDOrUUId) (*Wallet, error)
-	UpdateWallet(context.Context, *Wallet) (*ChatIsOk, error)
+	// rpc UpdateWallet(Wallet) returns(ChatIsOk);
 	UpdateWallrt(context.Context, *UpdateDataReq) (*ChatIsOk, error)
 	mustEmbedUnimplementedChatServer()
 }
@@ -560,9 +551,6 @@ func (UnimplementedChatServer) GetPointAutoRefresh(context.Context, *UserIDOrUUI
 }
 func (UnimplementedChatServer) GetWallet(context.Context, *UserIDOrUUId) (*Wallet, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWallet not implemented")
-}
-func (UnimplementedChatServer) UpdateWallet(context.Context, *Wallet) (*ChatIsOk, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateWallet not implemented")
 }
 func (UnimplementedChatServer) UpdateWallrt(context.Context, *UpdateDataReq) (*ChatIsOk, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateWallrt not implemented")
@@ -1192,24 +1180,6 @@ func _Chat_GetWallet_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Chat_UpdateWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Wallet)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ChatServer).UpdateWallet(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/openim.chat.chat/UpdateWallet",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChatServer).UpdateWallet(ctx, req.(*Wallet))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Chat_UpdateWallrt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateDataReq)
 	if err := dec(in); err != nil {
@@ -1370,10 +1340,6 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWallet",
 			Handler:    _Chat_GetWallet_Handler,
-		},
-		{
-			MethodName: "UpdateWallet",
-			Handler:    _Chat_UpdateWallet_Handler,
 		},
 		{
 			MethodName: "UpdateWallrt",

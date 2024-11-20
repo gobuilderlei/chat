@@ -467,6 +467,6 @@ service chat {
 
   //钱包
   rpc GetWallet(UserIDOrUUId) returns(Wallet);
-  rpc UpdateWallet(Wallet) returns(ChatIsOk);
+//  rpc UpdateWallet(Wallet) returns(ChatIsOk);
   rpc UpdateWallrt(UpdateDataReq) returns (ChatIsOk);
 }

@@ -79,6 +79,7 @@ type ChatDatabaseInterface interface {
 	//积分操作部分
 	CreatePointsRefreshRecord(ctx context.Context, record ...*chatdb.PointsRefreshRecord) error
 	GetPointsRefreshRecord(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.PointsRefreshRecord, error)
+	GetPointsRefreshRecordForLast(ctx context.Context, userid string) (*chatdb.PointsRefreshRecord, error)
 
 	//钱包部分
 	CreateWallet(ctx context.Context, wallet ...*chatdb.Wallet) error
@@ -422,4 +423,8 @@ func (o *ChatDatabase) UpdateWallet(ctx context.Context, userId string, data map
 		return false, error(nil)
 	}
 	return true, o.wallet.Update(ctx, userId, data)
+}
+
+func (o *ChatDatabase) GetPointsRefreshRecordForLast(ctx context.Context, userid string) (*chatdb.PointsRefreshRecord, error) {
+	return o.points.TakeLast(ctx, userid)
 }
