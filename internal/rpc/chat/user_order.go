@@ -237,37 +237,206 @@ func (o *chatSvr) CreateShopOrder(ctx context.Context, req *chat.ShopOrder) (res
 	return &chat.ChatIsOk{IsOk: true}, nil
 }
 func (o *chatSvr) GetShopOrderForUserUUid(ctx context.Context, req *chat.UserIDOrUUId) (res *chat.ShopOrder, err error) {
-	return nil, nil
+	oderuuid, err := o.Database.GetOrderForuuid(ctx, req.Useridoruuid)
+	if err != nil {
+		fmt.Println("GetOrderForuuid err:", err)
+		return nil, err
+	}
+	return &chat.ShopOrder{
+		UUId:       oderuuid.UUId,
+		UserId:     oderuuid.UserId,
+		OrderType:  int32(oderuuid.OrderType),
+		GoodsId:    oderuuid.GoodsId,
+		MerchantId: oderuuid.MerchantId,
+		Status:     int32(oderuuid.Status),
+		Amount:     float64(oderuuid.Amount),
+		PayAmount: &chat.PayAmount{
+			AlipayAmount:   float64(oderuuid.PayAmount.AlipayAmount),
+			WechatAmount:   float64(oderuuid.PayAmount.WechatAmount),
+			VoucherAmount:  float64(oderuuid.PayAmount.VoucherAmount),
+			UnionpayAmount: float64(oderuuid.PayAmount.UnionpayAmount),
+		},
+		CreateTime: oderuuid.CreateTime,
+		PayTime:    oderuuid.PayTime,
+		FinishTime: oderuuid.FinishTime,
+		Encryption: oderuuid.Encryption,
+	}, nil
 }
 
 // 可以是id也可以是uuid,也可以是merchantid或者是goodsid
 func (o *chatSvr) GetShopOrders(ctx context.Context, req *chat.UserIDOrUUIdAndPagination) (res *chat.ShopOrderListRes, err error) {
-	return nil, nil
+	_, orders, err := o.Database.GetOrderForUserid(ctx, req.Useridoruuid, req.GetPagination())
+	if err != nil {
+		fmt.Println("GetOrderForUserid err:", err)
+		return nil, err
+	}
+	var orderlist []*chat.ShopOrder
+	var order *chat.ShopOrder
+	for _, v := range orders {
+		order.UUId = v.UUId
+		order.UserId = v.UserId
+		order.OrderType = int32(v.OrderType)
+		order.GoodsId = v.GoodsId
+		order.MerchantId = v.MerchantId
+		order.Status = int32(v.Status)
+		order.Amount = float64(v.Amount)
+		order.PayAmount = &chat.PayAmount{
+			AlipayAmount:   float64(v.PayAmount.AlipayAmount),
+			WechatAmount:   float64(v.PayAmount.WechatAmount),
+			VoucherAmount:  float64(v.PayAmount.VoucherAmount),
+			UnionpayAmount: float64(v.PayAmount.UnionpayAmount),
+		}
+		order.CreateTime = v.CreateTime
+		order.PayTime = v.PayTime
+		order.FinishTime = v.FinishTime
+		order.Encryption = v.Encryption
+		orderlist = append(orderlist, order)
+	}
+	return &chat.ShopOrderListRes{
+		ShopOrderList: orderlist,
+	}, nil
 }
 func (o *chatSvr) GetShopOrderForStatus(ctx context.Context, req *chat.ShopOrderStatus) (res *chat.ShopOrderListRes, err error) {
-	return nil, nil
+	_, orders, err := o.Database.GetOrderForStatus(ctx, int(req.OrderType), int(req.Status), req.GetPagination())
+	if err != nil {
+		fmt.Println("GetOrderForStatus err:", err)
+		return nil, err
+	}
+	var order *chat.ShopOrder
+	var orderlist []*chat.ShopOrder
+	for _, v := range orders {
+		order.UUId = v.UUId
+		order.UserId = v.UserId
+		order.OrderType = int32(v.OrderType)
+		order.GoodsId = v.GoodsId
+		order.MerchantId = v.MerchantId
+		order.Status = int32(v.Status)
+		order.Amount = float64(v.Amount)
+		order.PayAmount = &chat.PayAmount{
+			AlipayAmount:   float64(v.PayAmount.AlipayAmount),
+			WechatAmount:   float64(v.PayAmount.WechatAmount),
+			VoucherAmount:  float64(v.PayAmount.VoucherAmount),
+			UnionpayAmount: float64(v.PayAmount.UnionpayAmount),
+		}
+		order.CreateTime = v.CreateTime
+		order.PayTime = v.PayTime
+		order.FinishTime = v.FinishTime
+		order.Encryption = v.Encryption
+		orderlist = append(orderlist, order)
+	}
+	return &chat.ShopOrderListRes{
+		ShopOrderList: orderlist,
+	}, nil
 }
+
 func (o *chatSvr) GetShopOrderForAmout(ctx context.Context, req *chat.ShopOrderAmount) (res *chat.ShopOrderListRes, err error) {
-	return nil, nil
+	_, orders, err := o.Database.GetOrderForAmount(ctx, float32(req.Minamount), float32(req.Maxamount), req.GetPagination())
+	if err != nil {
+		fmt.Println("GetOrderForAmout err:", err)
+		return nil, err
+	}
+	var order *chat.ShopOrder
+	var orderlist []*chat.ShopOrder
+	for _, v := range orders {
+		order.UUId = v.UUId
+		order.UserId = v.UserId
+		order.OrderType = int32(v.OrderType)
+		order.GoodsId = v.GoodsId
+		order.MerchantId = v.MerchantId
+		order.Status = int32(v.Status)
+		order.Amount = float64(v.Amount)
+		order.PayAmount = &chat.PayAmount{
+			AlipayAmount:   float64(v.PayAmount.AlipayAmount),
+			WechatAmount:   float64(v.PayAmount.WechatAmount),
+			VoucherAmount:  float64(v.PayAmount.VoucherAmount),
+			UnionpayAmount: float64(v.PayAmount.UnionpayAmount),
+		}
+		order.CreateTime = v.CreateTime
+		order.PayTime = v.PayTime
+		order.FinishTime = v.FinishTime
+		order.Encryption = v.Encryption
+		orderlist = append(orderlist, order)
+	}
+	return &chat.ShopOrderListRes{
+		ShopOrderList: orderlist,
+	}, nil
 }
 
 // 积分自动刷新系统
 func (o *chatSvr) CreatePointAutoRefresh(ctx context.Context, req *chat.PointAutoRefresh) (res *chat.ChatIsOk, err error) {
-	return nil, nil
+	var pointAutoRefresh *chatdb.PointsRefreshRecord
+	pointAutoRefresh.UserID = req.UserId
+	pointAutoRefresh.TotalPoints = req.TotalPoints
+	pointAutoRefresh.Operator = int(req.Operator)
+	pointAutoRefresh.RefreshTime = req.RefreshTime
+	pointAutoRefresh.Points = float32(req.Points)
+	pointAutoRefresh.RefreshVoucher = float32(req.RefreshVoucher)
+	pointAutoRefresh.Note = req.Note
+	pointAutoRefresh.Encryption = req.Encryption
+	err1 := o.Database.CreatePointsRefreshRecord(ctx, pointAutoRefresh)
+	if err1 != nil {
+		fmt.Println("CreatePointAutoRefresh err:", err1)
+		return &chat.ChatIsOk{IsOk: false}, nil
+	}
+	return &chat.ChatIsOk{IsOk: true}, nil
 }
 func (o *chatSvr) GetPointAutoRefresh(ctx context.Context, req *chat.UserIDOrUUIdAndPagination) (res *chat.PointsAutoRefreshListRes, err error) {
+	_, pointAutoRefreshList, err := o.Database.GetPointsRefreshRecord(ctx, req.Useridoruuid, req.GetPagination())
+	if err != nil {
+		fmt.Println("GetPointAutoRefresh err:", err)
+		return nil, err
+	}
+	var pointAutoRefresh *chat.PointAutoRefresh
+	var pointAutoRefreshListRes []*chat.PointAutoRefresh
+	for _, v := range pointAutoRefreshList {
+		pointAutoRefresh.UserId = v.UserID
+		pointAutoRefresh.TotalPoints = v.TotalPoints
+		pointAutoRefresh.Operator = int32(int(v.Operator))
+		pointAutoRefresh.RefreshTime = v.RefreshTime
+		pointAutoRefresh.Points = float64(v.Points)
+		pointAutoRefresh.RefreshVoucher = float64(v.RefreshVoucher)
+		pointAutoRefresh.Note = v.Note
+		pointAutoRefresh.Encryption = v.Encryption
+		pointAutoRefreshListRes = append(pointAutoRefreshListRes, pointAutoRefresh)
+		return &chat.PointsAutoRefreshListRes{
+			PointAutoRefreshList: pointAutoRefreshListRes}, nil
+	}
 	return nil, nil
 }
 
 // 钱包
 func (o *chatSvr) GetWallet(ctx context.Context, req *chat.UserIDOrUUId) (res *chat.Wallet, err error) {
-	return nil, nil
+	wallet, err := o.Database.GetWalletByUserID(ctx, req.Useridoruuid)
+	if err != nil {
+		fmt.Println("GetWallet err:", err)
+		return nil, err
+	}
+	return &chat.Wallet{
+		UserId:        wallet.UserID,
+		PointsKeeping: float64(wallet.PointsKeeping),
+		Voucher:       float64(wallet.Voucher),
+	}, nil
 }
 func (o *chatSvr) UpdateWallet(ctx context.Context, req *chat.Wallet) (res *chat.ChatIsOk, err error) {
 	return nil, nil
 }
 func (o *chatSvr) UpdateWallrt(ctx context.Context, req *chat.UpdateDataReq) (res *chat.ChatIsOk, err error) {
-	return nil, nil
+	value := ""
+	for _, v := range req.GetData() {
+		value = v
+		fmt.Println(value)
+	}
+	var reslut map[string]any
+	err1 := json.Unmarshal([]byte(value), &reslut)
+	if err1 != nil {
+		fmt.Println("UpdateWallrt err:", err1)
+	}
+	isok, err2 := o.Database.UpdateWallet(ctx, req.Useridoruuid, reslut)
+	if err2 != nil {
+		fmt.Println("UpdateWallrt err:", err2)
+		return &chat.ChatIsOk{IsOk: isok}, nil
+	}
+	return &chat.ChatIsOk{IsOk: isok}, nil
 }
 
 func HmacSha256ToHex(key string, data string) string {
