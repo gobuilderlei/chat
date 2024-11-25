@@ -22,6 +22,10 @@ type ShopOrder struct {
 	Amount float32 `json:"amount" bson:"amount"` //订单金额
 	//支付金额情况
 	PayAmount PayAmount `json:"payAmount" bson:"pay_amount"` //支付金额情况
+	//订单利润比率
+	ProfitRate int `json:"profitRate" bson:"profit_rate"` //订单利润比率
+	//本单毛利润本单margin比率
+	MarginRate float32 `json:"marginRate" bson:"margin_rate"` //本单毛利润
 	//订单创建时间
 	CreateTime int64 `json:"createTime" bson:"create_time"` //订单创建时间
 	//订单支付时间
@@ -51,4 +55,5 @@ type ShopOrderInterface interface {
 	GetByStatus(ctx context.Context, ordertype, status int, pagination pagination.Pagination) (int64, []*ShopOrder, error)
 	GetByGoodsId(ctx context.Context, goodsId string, pagination pagination.Pagination) (int64, []*ShopOrder, error)
 	GetByAmount(ctx context.Context, minAmount, maxAmount float32, pagination pagination.Pagination) (int64, []*ShopOrder, error)
+	GetBySystem(ctx context.Context, timestamp int64) (float32, error) //当前时间段内的订单总金额,获取24小时内的订单总利润
 }

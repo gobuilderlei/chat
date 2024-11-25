@@ -15,11 +15,12 @@
 syntax = "proto3";
 package openim.admin;
 
-import "pkg/protocol/common/common.proto";
-import "pkg/protocol/sdkws/sdkws.proto";
-import "pkg/protocol/wrapperspb/wrapperspb.proto";
+import "common/common.proto";
+import "sdkws/sdkws.proto";
+import "wrapperspb/wrapperspb.proto";
 
 option go_package = "github.com/openimsdk/chat/pkg/protocol/admin";
+
 
 // login
 message LoginReq {

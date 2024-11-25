@@ -9,6 +9,10 @@ import (
 	"fmt"
 	chatdb "github.com/openimsdk/chat/pkg/common/db/table/chat"
 	"github.com/openimsdk/chat/pkg/protocol/chat"
+	"github.com/robfig/cron/v3"
+	"math"
+	"strconv"
+	"time"
 )
 
 //用户钱包,用户交易,用户订单,用户积分每日0点刷新等等操作.
@@ -211,10 +215,13 @@ func (o *chatSvr) CreateShopOrder(ctx context.Context, req *chat.ShopOrder) (res
 	shopOrder.MerchantId = req.MerchantId    //    string    `json:"merchantId" bson:"merchant_id"`
 	shopOrder.Status = int(req.Status)       //     int       `json:"status" bson:"status"`
 	shopOrder.Amount = float32(req.Amount)   //     float32   `json:"amount" bson:"amount"`
-	shopOrder.PayAmount = payment            // PayAmount `json:"payAmount" bson:"pay_amount"`
-	shopOrder.CreateTime = req.CreateTime    // int64     `json:"createTime" bson:"create_time"`
-	shopOrder.PayTime = req.PayTime          //     int64     `json:"payTime" bson:"pay_time"`
-	shopOrder.FinishTime = req.FinishTime    //    int64     `json:"finishTime" bson:"finish_time"`
+	shopOrder.PayAmount = payment
+	shopOrder.ProfitRate = int(req.ProfitRate)
+	magrate := (payment.AlipayAmount + payment.WechatAmount + payment.VoucherAmount + payment.UnionpayAmount) * float32(req.ProfitRate) / 100
+	shopOrder.MarginRate = float32(math.Trunc(float64(magrate*100)) / 100) // PayAmount `json:"payAmount" bson:"pay_amount"`
+	shopOrder.CreateTime = req.CreateTime                                  // int64     `json:"createTime" bson:"create_time"`
+	shopOrder.PayTime = req.PayTime                                        //     int64     `json:"payTime" bson:"pay_time"`
+	shopOrder.FinishTime = req.FinishTime                                  //    int64     `json:"finishTime" bson:"finish_time"`
 
 	lastencry, err0 := o.Database.GetByUserIdForLAST(ctx, req.UserId)
 	if err0 != nil {
@@ -256,6 +263,7 @@ func (o *chatSvr) GetShopOrderForUserUUid(ctx context.Context, req *chat.UserIDO
 			VoucherAmount:  float64(oderuuid.PayAmount.VoucherAmount),
 			UnionpayAmount: float64(oderuuid.PayAmount.UnionpayAmount),
 		},
+		ProfitRate: int32(oderuuid.ProfitRate),
 		CreateTime: oderuuid.CreateTime,
 		PayTime:    oderuuid.PayTime,
 		FinishTime: oderuuid.FinishTime,
@@ -286,6 +294,7 @@ func (o *chatSvr) GetShopOrders(ctx context.Context, req *chat.UserIDOrUUIdAndPa
 			VoucherAmount:  float64(v.PayAmount.VoucherAmount),
 			UnionpayAmount: float64(v.PayAmount.UnionpayAmount),
 		}
+		order.ProfitRate = int32(v.ProfitRate)
 		order.CreateTime = v.CreateTime
 		order.PayTime = v.PayTime
 		order.FinishTime = v.FinishTime
@@ -318,6 +327,7 @@ func (o *chatSvr) GetShopOrderForStatus(ctx context.Context, req *chat.ShopOrder
 			VoucherAmount:  float64(v.PayAmount.VoucherAmount),
 			UnionpayAmount: float64(v.PayAmount.UnionpayAmount),
 		}
+		order.ProfitRate = int32(v.ProfitRate)
 		order.CreateTime = v.CreateTime
 		order.PayTime = v.PayTime
 		order.FinishTime = v.FinishTime
@@ -351,6 +361,7 @@ func (o *chatSvr) GetShopOrderForAmout(ctx context.Context, req *chat.ShopOrderA
 			VoucherAmount:  float64(v.PayAmount.VoucherAmount),
 			UnionpayAmount: float64(v.PayAmount.UnionpayAmount),
 		}
+		order.ProfitRate = int32(v.ProfitRate)
 		order.CreateTime = v.CreateTime
 		order.PayTime = v.PayTime
 		order.FinishTime = v.FinishTime
@@ -449,6 +460,118 @@ func (o *chatSvr) UpdateWallet(ctx context.Context, req *chat.UpdateDataReq) (re
 	return &chat.ChatIsOk{IsOk: isok}, nil
 }
 
+func (o *chatSvr) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUUId) (res *chat.ChatIsOk, err error) {
+	if req.Useridoruuid != "9999999999" {
+		//1.先查询昨天总利润
+		//1.1设置定时器,每天夜间23点59分59秒执行一次.
+		corn := cron.New(cron.WithSeconds())
+		corn.AddFunc("59 59 23 * * *", func() {
+			timemicro := time.Now().Unix() - 86399
+			fmt.Println("定时任务开始执行", timemicro)
+			//1.2获取当前系统时间.然后给与系统去查询这段时间的总订单及总利润.
+			allOrderMarginRate, err := o.Database.GetOrderMarginRateForSystem(ctx, timemicro)
+			if err != nil {
+				fmt.Println("GetOrderMarginRateForSystem err:", err)
+				o.UpdateWalletBysystem(ctx, req)
+				return
+			}
+			allocated_OrderMarginRate := allOrderMarginRate * 0.8 //商户及个人可分配利润
+			ltd_OrderMarginRate := allOrderMarginRate * 0.1       //企业利润
+			fmt.Println("今日商户及个人可分配利润:", allocated_OrderMarginRate)
+			fmt.Println("今日平台公司利润:", ltd_OrderMarginRate)
+			allconsumerOrder, allconsumer_points, err := o.Database.GetWalletBySystem(ctx, req.Useridoruuid, 0)
+			if err != nil {
+				fmt.Println("allconsumer_points err:", err)
+			}
+			fmt.Println(allconsumer_points)
+			allmerchantOrder, allmerchant_points, err := o.Database.GetWalletBySystem(ctx, req.Useridoruuid, 1)
+			if err != nil {
+				fmt.Println("allmerchant_points err:", err)
+			}
+			fmt.Println(allmerchant_points)
+			//point_radix_string :=fmt.Sprintf("%.2f", all_points / allocated_OrderMarginRate)
+			//计算没一个积分的价值.
+			consumer_point_radix := truncateFloat32(allconsumer_points/allocated_OrderMarginRate*0.6, 2)
+			fmt.Println("个人积分分红基数", consumer_point_radix)
+			//var shop_consumerOrder []chatdb.Wallet
+			//var shop_consumer chatdb.Wallet
+			for _, v := range allconsumerOrder {
+				//shop_consumer.UserID = v.UserID
+				today_consumer_points := consumer_point_radix * v.PointsKeeping
+				isok, err2 := o.Database.UpdateWallet(ctx, v.UserID,
+					map[string]any{
+						"points_keeping": today_consumer_points,
+						"voucher":        v.Voucher + today_consumer_points})
+				if err2 != nil {
+					fmt.Println("个人用户失败!UpdateWallrt err:", err2, "当前账号", v.UserID, "更新失败", "points_keeping", v.PointsKeeping-today_consumer_points, "voucher", v.Voucher+today_consumer_points)
+				}
+				cu, err := o.Database.GetPointsRefreshRecordForLast(ctx, v.UserID)
+				if err != nil {
+					fmt.Println("GetPointsRefreshRecordForLast err:", err)
+				}
+				err1 := o.Database.CreatePointsRefreshRecord(ctx, &chatdb.PointsRefreshRecord{
+					UserID:         v.UserID,
+					TotalPoints:    toint64(v.AllPoints),
+					Operator:       0,
+					RefreshTime:    time.Now().Unix(),
+					Points:         today_consumer_points,
+					RefreshVoucher: today_consumer_points,
+					Note:           "系统给予个人积分" + fmt.Sprintf("%s", today_consumer_points),
+					Encryption: HmacSha256ToHex("ZWL",
+						v.UserID+
+							fmt.Sprintf("%v", v.AllPoints)+
+							fmt.Sprintf("%v", 0)+
+							fmt.Sprintf("%f", today_consumer_points)+
+							fmt.Sprintf("%f", today_consumer_points)+
+							cu.Encryption)})
+				fmt.Println("个人用户成功!UpdateWallrt err:", err1)
+				fmt.Println(isok)
+			}
+			merchant_point_radix := truncateFloat32(allmerchant_points/allocated_OrderMarginRate*0.4, 2)
+			fmt.Println("商户积分分红基数", merchant_point_radix)
+			for _, v := range allmerchantOrder {
+				merchant_points := merchant_point_radix * v.PointsKeeping
+				isok, err2 := o.Database.UpdateWallet(ctx, v.UserID, map[string]any{
+					"points_keeping": v.PointsKeeping - merchant_points,
+					"voucher":        v.Voucher + merchant_points,
+				})
+				if err2 != nil {
+					fmt.Println("商户失败!UpdateWallrt err:", err2, "当前账号", v.UserID, "更新失败", "points_keeping", v.PointsKeeping-merchant_points, "voucher", v.Voucher+merchant_points)
+				}
+				cu, err := o.Database.GetPointsRefreshRecordForLast(ctx, v.UserID)
+				if err != nil {
+					fmt.Println("GetPointsRefreshRecordForLast err:", err)
+				}
+				err1 := o.Database.CreatePointsRefreshRecord(ctx, &chatdb.PointsRefreshRecord{
+					UserID:         v.UserID,
+					TotalPoints:    toint64(v.AllPoints),
+					Operator:       0,
+					RefreshTime:    time.Now().Unix(),
+					Points:         merchant_point_radix,
+					RefreshVoucher: merchant_point_radix,
+					Note:           "系统给予商户积分" + fmt.Sprintf("%s", merchant_point_radix),
+					Encryption: HmacSha256ToHex("ZWL",
+						v.UserID+
+							fmt.Sprintf("%v", v.AllPoints)+
+							fmt.Sprintf("%v", 0)+
+							fmt.Sprintf("%f", merchant_point_radix)+
+							fmt.Sprintf("%f", merchant_point_radix)+
+							cu.Encryption)})
+				fmt.Println("商户积分成功!UpdateWallrt err:", err1)
+				fmt.Println(isok)
+			}
+
+		})
+		corn.Start()
+		//2.总利润减去20%.
+		//3.查询需要昨天内所有剩余的积分数
+		//4.个人消费池子总利润/个人消费池总剩余积分数=个人积分价值,商户消费池子总利润/商户消费池剩余积分数=商户积分价值 计算出当前积分价值
+		//5.个人积分价值*个人剩余积分=个人今天获得的抵扣券,商户积分价值*商户剩余积分=商户今天获得的抵扣券
+		//6.更新个人钱包与商户钱包.个人剩余积分减去今天获得的抵扣券, 个人消费池子剩余积分减去今天获得的抵扣券, 商户剩余积分减去今天获得的抵扣券.
+	}
+	return &chat.ChatIsOk{IsOk: false}, nil
+}
+
 func HmacSha256ToHex(key string, data string) string {
 	return hex.EncodeToString(HmacSha256(key, data))
 }
@@ -458,4 +581,24 @@ func HmacSha256(key string, data string) []byte {
 	_, _ = mac.Write([]byte(data))
 
 	return mac.Sum(nil)
+}
+
+func truncateFloat32(value float32, places int) float32 {
+	// 计算乘以的因子
+	multiplier := float32(1)
+	for i := 0; i < places; i++ {
+		multiplier *= 10
+	}
+
+	// 先乘以因子，然后取整，再除以因子，进行截断
+	return float32(int32(value*multiplier)) / multiplier
+}
+
+func toint64(value string) int64 {
+	intvalue, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+		toint64(value)
+	}
+	return intvalue
 }

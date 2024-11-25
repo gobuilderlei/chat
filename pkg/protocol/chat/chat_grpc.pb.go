@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v5.28.2
-// source: pkg/protocol/chat/chat.proto
+// source: chat/chat.proto
 
 package chat
 
@@ -67,7 +67,8 @@ type ChatClient interface {
 	// 钱包
 	GetWallet(ctx context.Context, in *UserIDOrUUId, opts ...grpc.CallOption) (*Wallet, error)
 	// rpc UpdateWallet(Wallet) returns(ChatIsOk);
-	UpdateWallrt(ctx context.Context, in *UpdateDataReq, opts ...grpc.CallOption) (*ChatIsOk, error)
+	UpdateWallet(ctx context.Context, in *UpdateDataReq, opts ...grpc.CallOption) (*ChatIsOk, error)
+	UpdateWalletBysystem(ctx context.Context, in *UserIDOrUUId, opts ...grpc.CallOption) (*ChatIsOk, error)
 }
 
 type chatClient struct {
@@ -384,9 +385,18 @@ func (c *chatClient) GetWallet(ctx context.Context, in *UserIDOrUUId, opts ...gr
 	return out, nil
 }
 
-func (c *chatClient) UpdateWallrt(ctx context.Context, in *UpdateDataReq, opts ...grpc.CallOption) (*ChatIsOk, error) {
+func (c *chatClient) UpdateWallet(ctx context.Context, in *UpdateDataReq, opts ...grpc.CallOption) (*ChatIsOk, error) {
 	out := new(ChatIsOk)
-	err := c.cc.Invoke(ctx, "/openim.chat.chat/UpdateWallrt", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/openim.chat.chat/UpdateWallet", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatClient) UpdateWalletBysystem(ctx context.Context, in *UserIDOrUUId, opts ...grpc.CallOption) (*ChatIsOk, error) {
+	out := new(ChatIsOk)
+	err := c.cc.Invoke(ctx, "/openim.chat.chat/UpdateWalletBysystem", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +452,8 @@ type ChatServer interface {
 	// 钱包
 	GetWallet(context.Context, *UserIDOrUUId) (*Wallet, error)
 	// rpc UpdateWallet(Wallet) returns(ChatIsOk);
-	UpdateWallrt(context.Context, *UpdateDataReq) (*ChatIsOk, error)
+	UpdateWallet(context.Context, *UpdateDataReq) (*ChatIsOk, error)
+	UpdateWalletBysystem(context.Context, *UserIDOrUUId) (*ChatIsOk, error)
 	mustEmbedUnimplementedChatServer()
 }
 
@@ -552,8 +563,11 @@ func (UnimplementedChatServer) GetPointAutoRefresh(context.Context, *UserIDOrUUI
 func (UnimplementedChatServer) GetWallet(context.Context, *UserIDOrUUId) (*Wallet, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWallet not implemented")
 }
-func (UnimplementedChatServer) UpdateWallrt(context.Context, *UpdateDataReq) (*ChatIsOk, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateWallrt not implemented")
+func (UnimplementedChatServer) UpdateWallet(context.Context, *UpdateDataReq) (*ChatIsOk, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWallet not implemented")
+}
+func (UnimplementedChatServer) UpdateWalletBysystem(context.Context, *UserIDOrUUId) (*ChatIsOk, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateWalletBysystem not implemented")
 }
 func (UnimplementedChatServer) mustEmbedUnimplementedChatServer() {}
 
@@ -1180,20 +1194,38 @@ func _Chat_GetWallet_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Chat_UpdateWallrt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Chat_UpdateWallet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateDataReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ChatServer).UpdateWallrt(ctx, in)
+		return srv.(ChatServer).UpdateWallet(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/openim.chat.chat/UpdateWallrt",
+		FullMethod: "/openim.chat.chat/UpdateWallet",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ChatServer).UpdateWallrt(ctx, req.(*UpdateDataReq))
+		return srv.(ChatServer).UpdateWallet(ctx, req.(*UpdateDataReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Chat_UpdateWalletBysystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserIDOrUUId)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServer).UpdateWalletBysystem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/openim.chat.chat/UpdateWalletBysystem",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServer).UpdateWalletBysystem(ctx, req.(*UserIDOrUUId))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1342,10 +1374,14 @@ var Chat_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Chat_GetWallet_Handler,
 		},
 		{
-			MethodName: "UpdateWallrt",
-			Handler:    _Chat_UpdateWallrt_Handler,
+			MethodName: "UpdateWallet",
+			Handler:    _Chat_UpdateWallet_Handler,
+		},
+		{
+			MethodName: "UpdateWalletBysystem",
+			Handler:    _Chat_UpdateWalletBysystem_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pkg/protocol/chat/chat.proto",
+	Metadata: "chat/chat.proto",
 }

@@ -69,6 +69,7 @@ type ChatDatabaseInterface interface {
 	//订单部分
 	CreateOrder(ctx context.Context, userid string, order ...*chatdb.ShopOrder) error
 	GetOrders(ctx context.Context, Userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
+	GetOrdersBySystem(ctx context.Context) (float32, error) //获得昨天总利润
 	GetOrderForuuid(ctx context.Context, uuid string) (*chatdb.ShopOrder, error)
 	GetOrderForUserid(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	GetByUserIdForLAST(ctx context.Context, userid string) (*chatdb.ShopOrder, error)
@@ -76,6 +77,7 @@ type ChatDatabaseInterface interface {
 	GetOrderForStatus(ctx context.Context, ordertype, status int, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	GetOrderForGoodsId(ctx context.Context, goodsId string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
 	GetOrderForAmount(ctx context.Context, minAmount, maxAmount float32, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error)
+	GetOrderMarginRateForSystem(ctx context.Context, timeunix int64) (float32, error)
 	//积分操作部分
 	CreatePointsRefreshRecord(ctx context.Context, record ...*chatdb.PointsRefreshRecord) error
 	GetPointsRefreshRecord(ctx context.Context, userid string, pagination pagination.Pagination) (int64, []*chatdb.PointsRefreshRecord, error)
@@ -84,6 +86,7 @@ type ChatDatabaseInterface interface {
 	//钱包部分
 	CreateWallet(ctx context.Context, wallet ...*chatdb.Wallet) error
 	GetWalletByUserID(ctx context.Context, userid string) (*chatdb.Wallet, error)
+	GetWalletBySystem(ctx context.Context, systemid string, usertype int) ([]chatdb.Wallet, float32, error)
 	UpdateWallet(ctx context.Context, userId string, data map[string]any) (bool, error)
 }
 
@@ -380,6 +383,11 @@ func (o *ChatDatabase) CreateOrder(ctx context.Context, userid string, order ...
 }
 func (o *ChatDatabase) GetOrders(ctx context.Context, Userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
 	return 0, nil, nil
+
+}
+func (o *ChatDatabase) GetOrdersBySystem(ctx context.Context) (float32, error) { //获得昨天总利润
+	//o.order.
+	return 0, nil
 }
 func (o *ChatDatabase) GetOrderForuuid(ctx context.Context, uuid string) (*chatdb.ShopOrder, error) {
 	return nil, nil
@@ -427,4 +435,17 @@ func (o *ChatDatabase) UpdateWallet(ctx context.Context, userId string, data map
 
 func (o *ChatDatabase) GetPointsRefreshRecordForLast(ctx context.Context, userid string) (*chatdb.PointsRefreshRecord, error) {
 	return o.points.TakeLast(ctx, userid)
+}
+
+func (o *ChatDatabase) GetOrderMarginRateForSystem(ctx context.Context, timeunix int64) (float32, error) {
+	return o.order.GetBySystem(ctx, timeunix)
+}
+
+func (o *ChatDatabase) GetWalletBySystem(ctx context.Context, systemid string, usertype int) ([]chatdb.Wallet, float32, error) {
+	if systemid == "9999999999" {
+		return o.wallet.GetAllPointsKeepingBySystem(ctx, usertype)
+	}
+
+	return nil, 0, nil
+
 }

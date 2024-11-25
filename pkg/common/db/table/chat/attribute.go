@@ -28,6 +28,8 @@ type Attribute struct {
 	AllowAddFriend   int32     `bson:"allow_add_friend"`
 	GlobalRecvMsgOpt int32     `bson:"global_recv_msg_opt"`
 	RegisterType     int32     `bson:"register_type"`
+	InvitationUserID string    `bson:"invitation_user_id"` //邀请人id
+	InvitationByname string    `bson:"invitation_by_name"` //邀请时候参考别名
 }
 
 func (Attribute) TableName() string {

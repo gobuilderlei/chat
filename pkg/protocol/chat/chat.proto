@@ -15,9 +15,9 @@
 syntax = "proto3";
 package openim.chat;
 
-import "pkg/protocol/common/common.proto";
-import "pkg/protocol/sdkws/sdkws.proto";
-import "pkg/protocol/wrapperspb/wrapperspb.proto";
+import "common/common.proto";
+import "sdkws/sdkws.proto";
+import "wrapperspb/wrapperspb.proto";
 
 option go_package = "github.com/openimsdk/chat/pkg/protocol/chat";
 
@@ -344,10 +344,11 @@ message ShopOrder{
     int32 Status = 6;
     double Amount = 7;
     PayAmount PayAmount= 8;
-    int64 CreateTime = 9;
-    int64 PayTime = 10;
-    int64 FinishTime = 11;
-    string Encryption = 12;//加密数据
+    int32 ProfitRate = 9;
+    int64 CreateTime = 10;
+    int64 PayTime = 11;
+    int64 FinishTime = 12;
+    string Encryption = 13;//加密数据
 }
 
 message PayAmount{
@@ -468,5 +469,6 @@ service chat {
   //钱包
   rpc GetWallet(UserIDOrUUId) returns(Wallet);
 //  rpc UpdateWallet(Wallet) returns(ChatIsOk);
-  rpc UpdateWallrt(UpdateDataReq) returns (ChatIsOk);
+  rpc UpdateWallet(UpdateDataReq) returns (ChatIsOk);
+  rpc UpdateWalletBysystem(UserIDOrUUId) returns(ChatIsOk);//系统每日刷新.计时器功能
 }

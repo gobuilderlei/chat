@@ -2,6 +2,8 @@ package chat
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	shopoder "github.com/openimsdk/chat/pkg/common/db/table/chat"
 	"github.com/openimsdk/tools/db/mongoutil"
 	"github.com/openimsdk/tools/db/pagination"
@@ -59,4 +61,35 @@ func (s *Shop_Order) GetByAmount(ctx context.Context, minAmount, maxAmount float
 		},
 	}
 	return mongoutil.FindPage[*shopoder.ShopOrder](ctx, s.coll, filter, pagination)
+}
+
+func (s *Shop_Order) GetBySystem(ctx context.Context, timestamp int64) (float32, error) {
+	pipline := mongo.Pipeline{
+		{{"$match", bson.M{"finish_time": bson.M{"$gte": timestamp}}}},
+		{{"$group", bson.M{
+			"_id": nil,
+			"marginrate": bson.D{
+				{"$sum", "$margin_rate"},
+			},
+		}}},
+	}
+	currsor, err := s.coll.Aggregate(ctx, pipline)
+	//currsor, err := mongoutil.Aggregate[*shopoder.ShopOrder](ctx, s.coll, pipline)
+	if err != nil {
+		fmt.Println("查询所有订单的利润率失败,计算失败!", err)
+		s.GetBySystem(ctx, timestamp) //错误后,重新执行一次
+		return 0, err
+	}
+	defer currsor.Close(ctx)
+	var result struct {
+		MarginRate float32 `json:"marginrate" bson:"marginrate"`
+	}
+	if currsor.Next(ctx) {
+		if err := currsor.Decode(&result); err != nil {
+			fmt.Println(err)
+			return 0, err
+		}
+		return result.MarginRate, nil
+	}
+	return 0, errors.New("没有订单数据")
 }
