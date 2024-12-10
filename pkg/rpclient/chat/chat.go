@@ -16,6 +16,7 @@ package chat
 
 import (
 	"context"
+	"google.golang.org/grpc"
 
 	"github.com/openimsdk/chat/pkg/protocol/chat"
 	"github.com/openimsdk/chat/pkg/protocol/common"
@@ -112,4 +113,58 @@ func (o *ChatClient) CheckUserExist(ctx context.Context, req *chat.CheckUserExis
 func (o *ChatClient) DelUserAccount(ctx context.Context, req *chat.DelUserAccountReq) (resp *chat.DelUserAccountResp, err error) {
 	resp, err = o.client.DelUserAccount(ctx, req)
 	return resp, err
+}
+
+// 商品部分
+func (o *ChatClient) GetProducts(ctx context.Context, req *chat.UserIDOrUUIdAndPagination, opts ...grpc.CallOption) (*chat.ProductList, error) {
+	return o.client.GetProducts(ctx, req)
+}
+func (o *ChatClient) GetProductForUUID(ctx context.Context, req *chat.UserIDOrUUId, opts ...grpc.CallOption) (*chat.ProductInfo, error) {
+	return o.client.GetProductForUUID(ctx, req)
+}
+func (o *ChatClient) CreateProduct(ctx context.Context, req *chat.ProductInfo, opts ...grpc.CallOption) (*chat.ChatIsOk, error) {
+	return o.client.CreateProduct(ctx, req)
+}
+func (o *ChatClient) UpdateProduct(ctx context.Context, req *chat.UpdateDataReq, opts ...grpc.CallOption) (*chat.ChatIsOk, error) {
+	return o.client.UpdateProduct(ctx, req)
+}
+
+func (o *ChatClient) CreateShopOrder(ctx context.Context, req *chat.ShopOrder) (*chat.ChatIsOk, error) {
+	resp, err := o.client.CreateShopOrder(ctx, req)
+	return resp, err
+}
+func (o *ChatClient) GetShopOrderForUserUUid(ctx context.Context, req *chat.UserIDOrUUId, opts ...grpc.CallOption) (*chat.ShopOrder, error) {
+	return o.client.GetShopOrderForUserUUid(ctx, req)
+}
+
+// 可以是id也可以是uuid,也可以是merchantid或者是goodsid
+func (o *ChatClient) GetShopOrders(ctx context.Context, req *chat.UserIDOrUUIdAndPagination, opts ...grpc.CallOption) (*chat.ShopOrderListRes, error) {
+	return o.client.GetShopOrders(ctx, req)
+}
+func (o *ChatClient) GetShopOrderForStatus(ctx context.Context, req *chat.ShopOrderStatus, opts ...grpc.CallOption) (*chat.ShopOrderListRes, error) {
+	return o.client.GetShopOrderForStatus(ctx, req)
+}
+func (o *ChatClient) GetShopOrderForAmout(ctx context.Context, req *chat.ShopOrderAmount, opts ...grpc.CallOption) (*chat.ShopOrderListRes, error) {
+	return o.client.GetShopOrderForAmout(ctx, req)
+}
+
+// 积分自动刷新系统
+func (o *ChatClient) CreatePointAutoRefresh(ctx context.Context, req *chat.PointAutoRefresh, opts ...grpc.CallOption) (*chat.ChatIsOk, error) {
+	return o.client.CreatePointAutoRefresh(ctx, req)
+}
+func (o *ChatClient) GetPointAutoRefresh(ctx context.Context, req *chat.UserIDOrUUIdAndPagination, opts ...grpc.CallOption) (*chat.PointsAutoRefreshListRes, error) {
+	return o.client.GetPointAutoRefresh(ctx, req)
+}
+
+// 钱包
+func (o *ChatClient) GetWallet(ctx context.Context, req *chat.UserIDOrUUId, opts ...grpc.CallOption) (*chat.Wallet, error) {
+	return o.client.GetWallet(ctx, req)
+}
+
+// rpc UpdateWallet(Wallet) returns(ChatIsOk);
+func (o *ChatClient) UpdateWallet(ctx context.Context, req *chat.UpdateDataReq, opts ...grpc.CallOption) (*chat.ChatIsOk, error) {
+	return o.client.UpdateWallet(ctx, req)
+}
+func (o *ChatClient) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUUId, opts ...grpc.CallOption) (*chat.ChatIsOk, error) {
+	return o.client.UpdateWalletBysystem(ctx, req)
 }

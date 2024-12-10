@@ -129,8 +129,9 @@ func (o *chatSvr) GetProductForUUID(ctx context.Context, req *chat.UserIDOrUUId)
 	return nil, nil
 }
 func (o *chatSvr) CreateProduct(ctx context.Context, req *chat.ProductInfo) (res *chat.ChatIsOk, err error) {
-	var product *chatdb.ProductAbttri
+	var product chatdb.ProductAbttri
 	product.UUid = req.UUid
+	fmt.Println("UUID", req.UUid)
 	product.BrandId = int(req.BrandId)
 	product.ProductCategoryId = int(req.ProductCategoryId)
 	product.FreightTemplateId = int(req.FreightTemplateId)
@@ -170,7 +171,7 @@ func (o *chatSvr) CreateProduct(ctx context.Context, req *chat.ProductInfo) (res
 	product.BrandName = req.BrandName
 	product.ProductCategoryName = req.ProductCategoryName
 	product.Description = req.Description
-	err = o.Database.CreateProduct(ctx, product)
+	err = o.Database.CreateProduct(ctx, &product)
 	if err != nil {
 		return &chat.ChatIsOk{IsOk: false}, nil
 	}
@@ -202,7 +203,7 @@ func (o *chatSvr) UpdateProduct(ctx context.Context, req *chat.UpdateDataReq) (r
 
 // 订单部分
 func (o *chatSvr) CreateShopOrder(ctx context.Context, req *chat.ShopOrder) (res *chat.ChatIsOk, err error) {
-	var shopOrder *chatdb.ShopOrder
+	var shopOrder chatdb.ShopOrder
 	var payment chatdb.PayAmount
 	payment.AlipayAmount = float32(req.PayAmount.AlipayAmount)
 	payment.WechatAmount = float32(req.PayAmount.WechatAmount)
@@ -234,7 +235,7 @@ func (o *chatSvr) CreateShopOrder(ctx context.Context, req *chat.ShopOrder) (res
 			fmt.Sprintf("%d", req.Amount)+
 			lastencry.Encryption,
 	)
-	err1 := o.Database.CreateOrder(ctx, req.UserId, shopOrder)
+	err1 := o.Database.CreateOrder(ctx, req.UserId, &shopOrder)
 	if err1 != nil {
 		fmt.Println("CreateOrder err:", err1)
 		return &chat.ChatIsOk{
@@ -279,7 +280,7 @@ func (o *chatSvr) GetShopOrders(ctx context.Context, req *chat.UserIDOrUUIdAndPa
 		return nil, err
 	}
 	var orderlist []*chat.ShopOrder
-	var order *chat.ShopOrder
+	var order chat.ShopOrder
 	for _, v := range orders {
 		order.UUId = v.UUId
 		order.UserId = v.UserId
@@ -299,7 +300,7 @@ func (o *chatSvr) GetShopOrders(ctx context.Context, req *chat.UserIDOrUUIdAndPa
 		order.PayTime = v.PayTime
 		order.FinishTime = v.FinishTime
 		order.Encryption = v.Encryption
-		orderlist = append(orderlist, order)
+		orderlist = append(orderlist, &order)
 	}
 	return &chat.ShopOrderListRes{
 		ShopOrderList: orderlist,
@@ -311,7 +312,7 @@ func (o *chatSvr) GetShopOrderForStatus(ctx context.Context, req *chat.ShopOrder
 		fmt.Println("GetOrderForStatus err:", err)
 		return nil, err
 	}
-	var order *chat.ShopOrder
+	var order chat.ShopOrder
 	var orderlist []*chat.ShopOrder
 	for _, v := range orders {
 		order.UUId = v.UUId
@@ -332,7 +333,7 @@ func (o *chatSvr) GetShopOrderForStatus(ctx context.Context, req *chat.ShopOrder
 		order.PayTime = v.PayTime
 		order.FinishTime = v.FinishTime
 		order.Encryption = v.Encryption
-		orderlist = append(orderlist, order)
+		orderlist = append(orderlist, &order)
 	}
 	return &chat.ShopOrderListRes{
 		ShopOrderList: orderlist,
@@ -345,7 +346,7 @@ func (o *chatSvr) GetShopOrderForAmout(ctx context.Context, req *chat.ShopOrderA
 		fmt.Println("GetOrderForAmout err:", err)
 		return nil, err
 	}
-	var order *chat.ShopOrder
+	var order chat.ShopOrder
 	var orderlist []*chat.ShopOrder
 	for _, v := range orders {
 		order.UUId = v.UUId
@@ -366,7 +367,7 @@ func (o *chatSvr) GetShopOrderForAmout(ctx context.Context, req *chat.ShopOrderA
 		order.PayTime = v.PayTime
 		order.FinishTime = v.FinishTime
 		order.Encryption = v.Encryption
-		orderlist = append(orderlist, order)
+		orderlist = append(orderlist, &order)
 	}
 	return &chat.ShopOrderListRes{
 		ShopOrderList: orderlist,
@@ -409,7 +410,7 @@ func (o *chatSvr) GetPointAutoRefresh(ctx context.Context, req *chat.UserIDOrUUI
 		fmt.Println("GetPointAutoRefresh err:", err)
 		return nil, err
 	}
-	var pointAutoRefresh *chat.PointAutoRefresh
+	var pointAutoRefresh chat.PointAutoRefresh
 	var pointAutoRefreshListRes []*chat.PointAutoRefresh
 	for _, v := range pointAutoRefreshList {
 		pointAutoRefresh.UserId = v.UserID
@@ -420,7 +421,7 @@ func (o *chatSvr) GetPointAutoRefresh(ctx context.Context, req *chat.UserIDOrUUI
 		pointAutoRefresh.RefreshVoucher = float64(v.RefreshVoucher)
 		pointAutoRefresh.Note = v.Note
 		pointAutoRefresh.Encryption = v.Encryption
-		pointAutoRefreshListRes = append(pointAutoRefreshListRes, pointAutoRefresh)
+		pointAutoRefreshListRes = append(pointAutoRefreshListRes, &pointAutoRefresh)
 		return &chat.PointsAutoRefreshListRes{
 			PointAutoRefreshList: pointAutoRefreshListRes}, nil
 	}
@@ -475,6 +476,9 @@ func (o *chatSvr) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUU
 				o.UpdateWalletBysystem(ctx, req)
 				return
 			}
+			/*当前存在的bug:现在数据库少,可以一次性获取所有数据,然后再对数据库进行批量操作,
+			但是现在数据库太大,一次性获取数据会导致内存溢出,所以需要分批获取数据,然后进行批量操作.
+			*/
 			allocated_OrderMarginRate := allOrderMarginRate * 0.8 //商户及个人可分配利润
 			ltd_OrderMarginRate := allOrderMarginRate * 0.1       //企业利润
 			fmt.Println("今日商户及个人可分配利润:", allocated_OrderMarginRate)
@@ -490,7 +494,7 @@ func (o *chatSvr) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUU
 			}
 			fmt.Println(allmerchant_points)
 			//point_radix_string :=fmt.Sprintf("%.2f", all_points / allocated_OrderMarginRate)
-			//计算没一个积分的价值.
+			//计算每一个积分的价值.
 			consumer_point_radix := truncateFloat32(allconsumer_points/allocated_OrderMarginRate*0.6, 2)
 			fmt.Println("个人积分分红基数", consumer_point_radix)
 			//var shop_consumerOrder []chatdb.Wallet

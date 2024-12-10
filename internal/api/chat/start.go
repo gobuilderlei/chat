@@ -91,4 +91,26 @@ func SetChatRoute(router gin.IRouter, chat *Api, mw *chatmw.MW) {
 	applicationGroup.POST("/page_versions", chat.PageApplicationVersion)
 
 	router.Group("/callback").POST("/open_im", chat.OpenIMCallback) // Callback
+
+	products := router.Group("/goods")
+	products.POST("/gets", chat.GetGoodsList)
+	products.POST("/getforuuid", chat.GetGoodforUUid)
+	products.POST("/create", chat.CreateGood)                //创建商品token
+	products.POST("/update", mw.CheckToken, chat.UpdateGood) //更新商品需要token
+
+	orders := router.Group("/order")
+	orders.POST("/create", mw.CheckToken, chat.CreateOrder)             //创建订单token
+	orders.POST("/getforuuid", mw.CheckToken, chat.GetOrder)            //获取订单token
+	orders.POST("/getforstatus", mw.CheckToken, chat.GetOrdersByStatus) //通过状态获取
+	orders.POST("/getforamount", chat.GetOrdersByAmount)                //通过价格获取
+	orders.POST("gets", chat.GetOrdersList)                             //获取订单列表
+
+	points := router.Group("/points", mw.CheckToken)
+	points.POST("/gets", chat.GetPoints)     //获取积分
+	points.POST("/create", chat.CreatePoint) //增加积分
+
+	wallets := router.Group("/wallets", mw.CheckToken)
+	wallets.POST("/get", chat.GetWallet)       //获取钱包信息
+	wallets.POST("/create", chat.CreateWallet) //创建钱包
+	wallets.POST("/update", chat.UpdateWallet) //更新钱包信息
 }

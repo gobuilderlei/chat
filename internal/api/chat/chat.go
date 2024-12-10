@@ -15,6 +15,9 @@
 package chat
 
 import (
+	"errors"
+	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"time"
 
@@ -337,7 +340,7 @@ func (o *Api) SearchFriend(c *gin.Context) {
 		return
 	}
 	if len(userIDs) == 0 {
-		apiresp.GinSuccess(c, &chatpb.SearchUserInfoResp{})
+		apiresp.GinSuccess(c, userIDs)
 		return
 	}
 	req.SearchUserInfoReq.UserIDs = userIDs
@@ -355,4 +358,166 @@ func (o *Api) LatestApplicationVersion(c *gin.Context) {
 
 func (o *Api) PageApplicationVersion(c *gin.Context) {
 	a2r.Call(admin.AdminClient.PageApplicationVersion, o.adminClient, c)
+}
+
+func (o *Api) GetGoodsList(c *gin.Context) {
+	req, err := a2r.ParseRequest[struct {
+		chatpb.UserIDOrUUIdAndPagination
+	}](c)
+	if err != nil {
+		fmt.Println("获取商品列表失败", err)
+		apiresp.GinError(c, err)
+		return
+	}
+	if req.Useridoruuid == "" {
+		req.Useridoruuid = mctx.GetOpUserID(c)
+	}
+	res, err1 := o.chatClient.GetProducts(c, &chatpb.UserIDOrUUIdAndPagination{})
+	if err1 != nil {
+		fmt.Println("获取商品列表失败11111-->>>", err1)
+		apiresp.GinError(c, err)
+		return
+	}
+	apiresp.GinSuccess(c, res.ProductList)
+}
+
+func (o *Api) GetGoodforUUid(c *gin.Context) {
+	req, err := a2r.ParseRequest[struct {
+		chatpb.UserIDOrUUId
+	}](c)
+	if err != nil {
+		fmt.Println("获取通过用户id或者uuid获取商品失败", err)
+		apiresp.GinError(c, err)
+		return
+	}
+	if req.Useridoruuid == "" {
+		req.Useridoruuid = mctx.GetOpUserID(c)
+	}
+	res, err1 := o.chatClient.GetProductForUUID(c, &chatpb.UserIDOrUUId{})
+	if err1 != nil {
+		apiresp.GinError(c, err1)
+		return
+	}
+	apiresp.GinSuccess(c, res)
+}
+
+func (o *Api) CreateGood(c *gin.Context) {
+	req, err := a2r.ParseRequest[struct {
+		chatpb.ProductInfo
+	}](c)
+	if err != nil {
+		apiresp.GinError(c, err)
+		return
+	}
+	if req.Name == "" {
+		apiresp.GinError(c, errors.New("商品名称不能为空"))
+	}
+	req.UUid = uuid.New().String()
+	isok, err1 := o.chatClient.CreateProduct(c, &req.ProductInfo)
+	if err1 != nil {
+		apiresp.GinError(c, err1)
+		return
+	}
+	apiresp.GinSuccess(c, isok)
+}
+
+func (o *Api) UpdateGood(c *gin.Context) {
+	req, err := a2r.ParseRequest[struct {
+		chatpb.UpdateDataReq
+	}](c)
+	if err != nil {
+		apiresp.GinError(c, err)
+		return
+	}
+	fmt.Println(req.Data)
+	isok, err1 := o.chatClient.UpdateProduct(c, &req.UpdateDataReq)
+	if err1 != nil {
+		fmt.Println("更新商品失败", err1)
+		apiresp.GinError(c, err1)
+		return
+	}
+	apiresp.GinSuccess(c, isok)
+}
+
+func (o *Api) CreateOrder(c *gin.Context) {
+	req, err := a2r.ParseRequest[struct {
+		chatpb.ShopOrder
+	}](c)
+	if err != nil {
+		apiresp.GinError(c, err)
+		return
+	}
+	if req.UserId == "" {
+		req.UserId = mctx.GetOpUserID(c)
+	}
+	isok, err1 := o.chatClient.CreateShopOrder(c, &req.ShopOrder)
+	if err1 != nil {
+		apiresp.GinError(c, err1)
+		return
+	}
+	apiresp.GinSuccess(c, isok)
+}
+func (o *Api) GetOrder(c *gin.Context) {
+	req, err := a2r.ParseRequest[struct {
+		chatpb.UserIDOrUUIdAndPagination
+	}](c)
+	if err != nil {
+		apiresp.GinError(c, err)
+		return
+	}
+	if req.Useridoruuid == "" {
+		fmt.Println("获取订单失败，用户id或者uuid不能为空")
+		apiresp.GinError(c, errors.New("获取订单失败，用户id或者uuid不能为空"))
+		return
+	}
+	res, err1 := o.chatClient.GetProducts(c, &req.UserIDOrUUIdAndPagination)
+	if err1 != nil {
+		apiresp.GinError(c, err1)
+		return
+	}
+	apiresp.GinSuccess(c, res)
+}
+
+func (o *Api) GetOrdersByStatus(c *gin.Context) {
+	req, err := a2r.ParseRequest[struct {
+		chatpb.ShopOrderStatus
+	}](c)
+	if err != nil {
+		apiresp.GinError(c, err)
+		return
+	}
+	if req.Status == 0 {
+		apiresp.GinError(c, errors.New("订单状态不能为空"))
+		return
+	}
+	res, err1 := o.chatClient.GetShopOrderForStatus(c, &req.ShopOrderStatus)
+	if err1 != nil {
+		fmt.Println("获取订单失败", err1)
+		apiresp.GinError(c, err1)
+		return
+	}
+	apiresp.GinSuccess(c, res)
+
+}
+func (o *Api) GetOrdersByAmount(c *gin.Context) {
+
+}
+func (o *Api) GetOrdersList(c *gin.Context) {
+
+}
+
+func (o *Api) GetPoints(c *gin.Context) {
+
+}
+func (o *Api) CreatePoint(c *gin.Context) {
+
+}
+func (o *Api) GetWallet(c *gin.Context) {
+
+}
+func (o *Api) CreateWallet(c *gin.Context) {
+
+}
+func (o *Api) UpdateWallet(c *gin.Context) {
+
 }

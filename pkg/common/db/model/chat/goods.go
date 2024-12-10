@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"fmt"
 	shopdb "github.com/openimsdk/chat/pkg/common/db/table/chat"
 	"github.com/openimsdk/tools/db/mongoutil"
 	"github.com/openimsdk/tools/db/pagination"
@@ -34,7 +35,8 @@ func (p *ShopProductAbttri) GetProduct(ctx context.Context, uuid string) (*shopd
 	return mongoutil.FindOne[*shopdb.ProductAbttri](ctx, p.coll, bson.M{"uuid": uuid, "_id": -1}, nil)
 }
 func (p *ShopProductAbttri) GetProducts(ctx context.Context, uuid string, pagination pagination.Pagination) (int64, []*shopdb.ProductAbttri, error) {
-	filter := bson.M{"uuid": uuid}
+	fmt.Println(uuid)
+	filter := bson.M{}
 	return mongoutil.FindPage[*shopdb.ProductAbttri](ctx, p.coll, filter, pagination, nil)
 }
 
