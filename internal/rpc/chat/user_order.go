@@ -202,6 +202,7 @@ func (o *chatSvr) UpdateProduct(ctx context.Context, req *chat.UpdateDataReq) (r
 }
 
 // 订单部分
+// 创建订单.
 func (o *chatSvr) CreateShopOrder(ctx context.Context, req *chat.ShopOrder) (res *chat.ChatIsOk, err error) {
 	var shopOrder chatdb.ShopOrder
 	var payment chatdb.PayAmount
@@ -382,7 +383,7 @@ func (o *chatSvr) CreatePointAutoRefresh(ctx context.Context, req *chat.PointAut
 		fmt.Println("GetPointsRefreshRecordForLast err:", err0)
 	}
 	pointAutoRefresh.UserID = req.UserId
-	pointAutoRefresh.TotalPoints = req.TotalPoints
+	pointAutoRefresh.TotalPoints = float32(req.TotalPoints)
 	pointAutoRefresh.Operator = int(req.Operator)
 	pointAutoRefresh.RefreshTime = req.RefreshTime
 	pointAutoRefresh.Points = float32(req.Points)
@@ -414,7 +415,7 @@ func (o *chatSvr) GetPointAutoRefresh(ctx context.Context, req *chat.UserIDOrUUI
 	var pointAutoRefreshListRes []*chat.PointAutoRefresh
 	for _, v := range pointAutoRefreshList {
 		pointAutoRefresh.UserId = v.UserID
-		pointAutoRefresh.TotalPoints = v.TotalPoints
+		pointAutoRefresh.TotalPoints = int64(v.TotalPoints)
 		pointAutoRefresh.Operator = int32(int(v.Operator))
 		pointAutoRefresh.RefreshTime = v.RefreshTime
 		pointAutoRefresh.Points = float64(v.Points)
@@ -461,8 +462,11 @@ func (o *chatSvr) UpdateWallet(ctx context.Context, req *chat.UpdateDataReq) (re
 	return &chat.ChatIsOk{IsOk: isok}, nil
 }
 
+// 思路:
+// 1,将更新修改为按页面,指定数量进行更新
+// 2,遇到问题后记录更新到哪,错误还有多少,还有几页,然后报警!
 func (o *chatSvr) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUUId) (res *chat.ChatIsOk, err error) {
-	if req.Useridoruuid != "9999999999" {
+	if req.Useridoruuid == "9999999999" {
 		//1.先查询昨天总利润
 		//1.1设置定时器,每天夜间23点59分59秒执行一次.
 		corn := cron.New(cron.WithSeconds())
@@ -470,7 +474,7 @@ func (o *chatSvr) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUU
 			timemicro := time.Now().Unix() - 86399
 			fmt.Println("定时任务开始执行", timemicro)
 			//1.2获取当前系统时间.然后给与系统去查询这段时间的总订单及总利润.
-			allOrderMarginRate, err := o.Database.GetOrderMarginRateForSystem(ctx, timemicro)
+			allOrderMarginRate, err := o.Database.GetOrderMarginRateForSystem(ctx, timemicro) //回头对时间进行调整,还是实现分页读取数据.
 			if err != nil {
 				fmt.Println("GetOrderMarginRateForSystem err:", err)
 				o.UpdateWalletBysystem(ctx, req)
@@ -515,7 +519,7 @@ func (o *chatSvr) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUU
 				}
 				err1 := o.Database.CreatePointsRefreshRecord(ctx, &chatdb.PointsRefreshRecord{
 					UserID:         v.UserID,
-					TotalPoints:    toint64(v.AllPoints),
+					TotalPoints:    v.AllPoints,
 					Operator:       0,
 					RefreshTime:    time.Now().Unix(),
 					Points:         today_consumer_points,
@@ -548,7 +552,7 @@ func (o *chatSvr) UpdateWalletBysystem(ctx context.Context, req *chat.UserIDOrUU
 				}
 				err1 := o.Database.CreatePointsRefreshRecord(ctx, &chatdb.PointsRefreshRecord{
 					UserID:         v.UserID,
-					TotalPoints:    toint64(v.AllPoints),
+					TotalPoints:    v.AllPoints,
 					Operator:       0,
 					RefreshTime:    time.Now().Unix(),
 					Points:         merchant_point_radix,

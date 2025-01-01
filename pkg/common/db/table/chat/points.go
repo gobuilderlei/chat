@@ -8,14 +8,14 @@ import (
 // 每日系统积分刷新记录表
 // 前端自动根据当前订单情况后,将积分数据写入此表,每日系统将根据此表刷新用户的积分数据
 type PointsRefreshRecord struct {
-	UserID         string  `bson:"user_id"`
-	TotalPoints    int64   `bson:"total_points"`             //总积分,不删除的
-	Operator       int     `json:"operator" bson:"operator"` //操作人  0:系统 1:用户
-	RefreshTime    int64   `bson:"refresh_time"`             //刷新时间戳
-	Points         float32 `bson:"points"`                   //保留小数点后2位数//数值直接截断,不四舍五入
-	RefreshVoucher float32 `bson:"refresh_voucher"`          //刷新的抵扣券
-	Note           string  `bson:"note"`                     //备注
-	Encryption     string  `bson:"encryption"`               //hash加密//每人加密数值都是上次的加密后的数值
+	UserID         string  `json:"user_id" bson:"user_id"`
+	TotalPoints    float32 `json:"totalPoints" bson:"total_points"`       //总积分,不删除的
+	Operator       int     `json:"operator" bson:"operator"`              //操作人  0:系统 1:用户
+	RefreshTime    int64   `json:"refreshTime" bson:"refresh_time"`       //刷新时间戳
+	Points         float32 `json:"points" bson:"points"`                  //保留小数点后2位数//数值直接截断,不四舍五入
+	RefreshVoucher float32 `json:"refreshVoucher" bson:"refresh_voucher"` //刷新的抵扣券
+	Note           string  `json:"note" bson:"note"`                      //备注
+	Encryption     string  `json:"encryption" bson:"encryption"`          //hash加密//每人加密数值都是上次的加密后的数值
 }
 
 func (PointsRefreshRecord) TableName() string {

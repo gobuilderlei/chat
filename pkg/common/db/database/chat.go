@@ -17,6 +17,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/openimsdk/tools/db/mongoutil"
@@ -86,7 +87,7 @@ type ChatDatabaseInterface interface {
 	//钱包部分
 	CreateWallet(ctx context.Context, wallet ...*chatdb.Wallet) error
 	GetWalletByUserID(ctx context.Context, userid string) (*chatdb.Wallet, error)
-	GetWalletBySystem(ctx context.Context, systemid string, usertype int) ([]chatdb.Wallet, float32, error)
+	GetWalletBySystem(ctx context.Context, systemid string, usertype int) ([]*chatdb.Wallet, float32, error)
 	UpdateWallet(ctx context.Context, userId string, data map[string]any) (bool, error)
 }
 
@@ -379,6 +380,111 @@ func (o *ChatDatabase) CreateOrder(ctx context.Context, userid string, order ...
 	if len(order) == 0 {
 		return errors.New("order is nil")
 	}
+	var orderproduct []chatdb.ShopOrder
+	for _, v := range order {
+		switch v.OrderType {
+		case 0: //线下订单,不退款的.
+			v.UserId = userid
+			orderproduct = append(orderproduct, *v)
+			//查询用户的钱包
+			cur_wallet, err := o.wallet.GetByUserID(ctx, userid)
+			if err != nil {
+				fmt.Println("用户%s的钱包查询错误,错误代码为%s", userid, err.Error())
+			}
+			cur_attr, err1 := o.attribute.Take(ctx, userid)
+			if err1 != nil {
+				fmt.Println("用户%s的属性查询错误,错误代码为%s", userid, err1.Error())
+			}
+			fmt.Println(cur_attr.InvitationUserID)
+			//1.这里更新需要注意的地方,更新钱包的时候,不用去考虑用户支付的时候是否使用了抵扣券
+			//2.查询用户的推荐人,所在区域
+			//3.根据用户所在区域,给推荐人,所在区域代理发放积分.根据积分规则发放
+			//4.消费者自己积分增加
+			//5,商家积分增加.
+			var pay_amount float32
+			switch cur_wallet.UserType {
+			case 0: //普通用户,消费多少累计多少积分.
+				pay_amount = v.PayAmount.UnionpayAmount + v.PayAmount.AlipayAmount + v.PayAmount.WechatAmount + v.PayAmount.VoucherAmount
+				err := o.wallet.Update(ctx, userid, map[string]any{
+					"points_keeping": cur_wallet.PointsKeeping + pay_amount,
+				})
+				if err != nil {
+					fmt.Println("用户%s的钱包更新错误,错误代码为%s", userid, err.Error())
+				}
+				err1 := o.wallet.Update(ctx, v.MerchantId, map[string]any{
+					"points_keeping": cur_wallet.PointsKeeping + pay_amount*float32(v.ProfitRate),
+				})
+				if err1 != nil {
+					fmt.Println("商家%s的钱包更新错误,错误代码为%s", v.MerchantId, err1.Error())
+				}
+				//用户所在地区,然后增加区域积分.
+				//用户地区未实现,暂时不能有积分.
+
+				//===================添加积分记录表
+				var point_records []*chatdb.PointsRefreshRecord
+				var point_record chatdb.PointsRefreshRecord
+				cur_userpoint, err11 := o.points.TakeLast(ctx, userid)
+				if err11 != nil {
+					fmt.Println("用户%s的积分记录查询错误,错误代码为%s", userid, err11.Error())
+				}
+				point_record.UserID = userid
+				point_record.TotalPoints = cur_userpoint.TotalPoints + pay_amount
+				point_record.Operator = 1
+				point_record.RefreshTime = time.Now().Unix() //时间戳
+				point_record.Points = pay_amount
+				point_record.RefreshVoucher = 0
+				point_record.Note = userid + "购买了" + v.MerchantId + "的商品" + v.UUId
+				point_record.Encryption = ""
+				point_records = append(point_records, &point_record)
+				cur_merchatpoint, err22 := o.points.TakeLast(ctx, v.MerchantId)
+				if err22 != nil {
+					fmt.Println("商家%s的积分记录查询错误,错误代码为%s", v.MerchantId, err22.Error())
+				}
+				point_record.UserID = v.MerchantId
+				point_record.TotalPoints = cur_merchatpoint.TotalPoints + pay_amount*float32(v.ProfitRate)
+				point_record.Operator = 1
+				point_record.RefreshTime = time.Now().Unix() //时间戳
+				point_record.Points = pay_amount * float32(v.ProfitRate)
+				point_record.RefreshVoucher = 0
+				point_record.Note = v.MerchantId + "获得了" + userid + "购买" + v.UUId + "商品的积分" + fmt.Sprintf("%.2f", pay_amount*float32(v.ProfitRate))
+				point_record.Encryption = ""
+				point_records = append(point_records, &point_record)
+				err33 := o.points.Create(ctx, point_records...)
+				if err33 != nil {
+					fmt.Println("用户%s的积分记录创建错误,错误代码为%s", userid, err33.Error())
+				}
+				//查询代理的
+				//cur_dailiipoint,err33:=o.points.TakeLast(ctx, cur_attr.InvitationUserID)
+				//if err33 != nil {
+				//}
+
+				//开始写入记录
+				//	o.points.Create(ctx, []*chatdb.PointsRefreshRecord{
+				//}
+				break
+			case 1: //线上订单,会有订单状态的
+				switch v.Status {
+				case 0: //待支付  此种状态默认是 丢在 redis里面进行操作.然后支付后,进入到待发货状态.
+					return errors.New("订单需要还未支付")
+				case 1: //待发货
+					v.UserId = userid
+					orderproduct = append(orderproduct, *v)
+					fmt.Println("状态是待发货")
+					//写入订单记录表,不生产相关积分.等待订单状态更新.
+				case 2: //待收货//初始订单生产,一般不会存在这种情况.
+					//v.UserId = userid
+					//orderproduct = append(orderproduct, *v)
+					//fmt.Println("状态是待收货")
+				case 3: //已完成
+				case 4: //已取消
+				case 5: //退款中
+				case 6: //退款完成
+				default:
+					return errors.New("订单状态错误")
+				}
+			}
+		}
+	}
 	return o.order.Create(ctx, userid, order...)
 }
 func (o *ChatDatabase) GetOrders(ctx context.Context, Userid string, pagination pagination.Pagination) (int64, []*chatdb.ShopOrder, error) {
@@ -441,7 +547,7 @@ func (o *ChatDatabase) GetOrderMarginRateForSystem(ctx context.Context, timeunix
 	return o.order.GetBySystem(ctx, timeunix)
 }
 
-func (o *ChatDatabase) GetWalletBySystem(ctx context.Context, systemid string, usertype int) ([]chatdb.Wallet, float32, error) {
+func (o *ChatDatabase) GetWalletBySystem(ctx context.Context, systemid string, usertype int) ([]*chatdb.Wallet, float32, error) {
 	if systemid == "9999999999" {
 		return o.wallet.GetAllPointsKeepingBySystem(ctx, usertype)
 	}
